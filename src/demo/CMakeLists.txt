@@ -26,6 +26,7 @@ SET(DEMOS
 		DEMdemo_BallDrop2D
 		DEMdemo_Mixer
 		DEMdemo_GRCPrep_Part1
+		DEMdemo_GRCSimplifiedPrep_Part1
 		DEMdemo_GRCPrep_Part2
 		DEMdemo_GRCPrep_Part3
 		DEMdemo_ConePenetration
@@ -39,6 +40,7 @@ SET(DEMOS
 		DEMdemo_FlexibleMesh
 		DEMdemo_Hopper_Sphere_Cylinder
 		DEMdemo_Fracture_Box
+		DEM_phx_setup
 )
 
 # ------------------------------------------------------------------------------
