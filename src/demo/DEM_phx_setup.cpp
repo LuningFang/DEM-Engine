@@ -24,6 +24,97 @@ using namespace deme;
 using namespace std::filesystem;
 
 
+// Read pin positions from a file
+std::vector<float3> ReadPinPositions(std::string filename) {
+    std::vector<float3> pin_positions;
+
+    std::ifstream pin_pos_file(GetDEMEDataFile(filename));
+    std::string line;
+    std::getline(pin_pos_file, line); // skip the first line
+    while (std::getline(pin_pos_file, line)) {
+        std::istringstream ss(line);
+        std::string token;
+        std::vector<std::string> tokens;
+        while (std::getline(ss, token, ',')) {
+            tokens.push_back(token);
+        }
+        float3 pin_center = make_float3(std::stof(tokens[0]), std::stof(tokens[1]), std::stof(tokens[2]));
+        pin_positions.push_back(pin_center);
+    }
+    return pin_positions;
+}
+
+
+std::vector<float3> PopulateParticlePositions(float spacing, 
+                                              float3 dim, 
+                                              std::vector<float3> pin_pos, 
+                                              double pin_radius) {
+
+    std::vector<float3> material_points;
+
+    // Generate initial clumps for piling
+    PDSampler sampler(spacing); // spacing should be 2.01 * particle_radius 
+
+    float box_X = dim.x;
+    float box_Y = dim.y;
+    float box_Z = dim.z;
+
+    float fill_y_bottom = -box_Y / 2.0f + 2 * spacing;
+    float fill_y_top = box_Y / 2.0f - spacing;
+    float3 sampler_center = make_float3(0.0f, fill_y_bottom, 0.0f);
+    float3 sampler_hdim = make_float3(box_X / 2.0f - spacing, 1e-6, box_Z / 2.0f - spacing);
+
+    // iterate over the pin position provided in pin_pos, find the unique values of pin_pos.y and keep them in an array of float
+    std::vector<float> unique_y_pos;
+    for (auto pin : pin_pos) {
+        double y = pin.y;
+        // check to see if the y value is already in the unique_y_pos array
+        if (std::find(unique_y_pos.begin(), unique_y_pos.end(), y) == unique_y_pos.end()) {
+            unique_y_pos.push_back(y);
+        }
+    }
+
+    std::sort(unique_y_pos.begin(), unique_y_pos.end());
+    int tube_pos_itr = 0;  // iterator over unique_y_pos, start layer number from bottom
+
+    while (sampler_center.y <= fill_y_top) {
+
+        if (tube_pos_itr >= unique_y_pos.size()){
+            break;
+        }
+
+        // check if sample_center.y() belongs to their range of the unique y position of the tube
+        bool in_tube = false;
+
+        double curr_tube_lower_bound = unique_y_pos[tube_pos_itr] - pin_radius;
+        double curr_tube_upper_bound = unique_y_pos[tube_pos_itr] + pin_radius;
+
+        if (sampler_center.y < curr_tube_lower_bound - 0.5 * spacing) {
+            // we are in no tube zone, create sample points however we want
+            auto points = sampler.SampleBox(sampler_center, sampler_hdim);
+            material_points.insert(material_points.end(), points.begin(), points.end());
+            std::cout << "insert points at layer " << sampler_center.y << std::endl;
+            sampler_center.y += spacing;
+        } else {
+            // oh no we hit the tube zone
+            // we need to create sample points that are not inside the tube
+            sampler_center.y = curr_tube_upper_bound + 0.5 * spacing;
+            tube_pos_itr++;
+        }
+    }
+
+    // now we are at the top of the tube, keep adding layers until we reach the top of the box
+    while (sampler_center.y <= fill_y_top) {
+        auto points = sampler.SampleBox(sampler_center, sampler_hdim);
+        material_points.insert(material_points.end(), points.begin(), points.end());
+        std::cout << "insert more points at layer " << sampler_center.y << std::endl;
+        sampler_center.y += spacing;
+    }
+
+    return material_points;
+}
+
+
 int main() {
 
     double bxDim = 5.0;
@@ -63,7 +154,7 @@ int main() {
     std::vector<std::shared_ptr<DEMClumpTemplate>> clump_types;
     double sand_density = 2.6e3;
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
-    double radius_array[3] = {0.212 * scaling, 0.15 * scaling, 0.106 * scaling};
+    double radius_array[3] = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
 
     // ratio, 20%, 50%, 30%
     double mass;
@@ -83,21 +174,7 @@ int main() {
     float safe_delta = 0.03;
 
     // read pin center from data file in data/sim_data/pin_pos.csv, skip the first header row, and assemble the value into a list of float3
-    std::vector<float3> pin_centers;
-    std::ifstream pin_pos_file(GetDEMEDataFile("sim_data/pin_pos.csv"));
-    std::string line;
-    std::getline(pin_pos_file, line); // skip the first line
-    while (std::getline(pin_pos_file, line)) {
-        std::istringstream ss(line);
-        std::string token;
-        std::vector<std::string> tokens;
-        while (std::getline(ss, token, ',')) {
-            tokens.push_back(token);
-        }
-        float3 pin_center = make_float3(std::stof(tokens[0]), std::stof(tokens[1]), std::stof(tokens[2]));
-        pin_centers.push_back(pin_center);
-    }
-
+    std::vector<float3> pin_centers = ReadPinPositions("sim_data/pin_pos.csv");
     std::cout << "number of pins: " << pin_centers.size() << std::endl;
 
     for (auto pin_center : pin_centers) {
@@ -110,19 +187,11 @@ int main() {
     std::vector<float3> input_xyz;
     std::vector<unsigned int> family_code;
 
-    float3 sample_center = make_float3(0, byDim/4., 0);
+    input_xyz =  PopulateParticlePositions(2.02 * radius_array[0], make_float3(bxDim, byDim, bzDim), pin_centers, tube_radius);
 
-    double smaple_half_dim_y = byDim/4. * 0.95; // <-- coefficient set to 0.2 for testing, 0.8 for actual running
-    float3 sample_half_dim = make_float3(bxDim/2. * 0.95, smaple_half_dim_y, bzDim/2. * 0.95);
+    std::cout << "number of particles: " << input_xyz.size() << std::endl;
 
-    std::cout << "sample center: " << sample_center.x << ", " << sample_center.y << ", " << sample_center.z << std::endl;
-    std::cout << "sample h_dim: " << sample_half_dim.x << ", " << sample_half_dim.y << ", " << sample_half_dim.z << std::endl;
-
-    auto input_material_xyz =
-        DEMBoxGridSampler(sample_center, sample_half_dim,
-                          radius_array[0] * 2.1,  radius_array[0] * 2.1, radius_array[0] * 2.1);
-    input_xyz.insert(input_xyz.end(), input_material_xyz.begin(), input_material_xyz.end());
-    unsigned int num_clumps = input_material_xyz.size();
+    unsigned int num_clumps = input_xyz.size();
     // Casually select from generated clump types
     for (unsigned int i = 0; i < num_clumps; i++) {
         input_template_type.push_back(clump_types.at(i % clump_types.size()));
@@ -174,6 +243,19 @@ int main() {
 
         DEMSim.DoDynamics(step_size);
     }
+
+    char cp_filename[200];
+    sprintf(cp_filename, "%s/GRC_3e5.csv", out_dir.c_str());
+    DEMSim.WriteClumpFile(std::string(cp_filename));
+
+    DEMSim.ShowThreadCollaborationStats();
+    DEMSim.ClearThreadCollaborationStats();
+
+    char cnt_filename[200];
+    sprintf(cnt_filename, "%s/Contact_pairs_3e5.csv", out_dir.c_str());
+    DEMSim.WriteContactFile(std::string(cnt_filename));
+
+
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> time_sec = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
     std::cout << (time_sec.count()) / time_end * 10.0 << " seconds (wall time) to finish 10 seconds' simulation"
