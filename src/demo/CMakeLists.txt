@@ -41,6 +41,7 @@ SET(DEMOS
 		DEMdemo_Hopper_Sphere_Cylinder
 		DEMdemo_Fracture_Box
 		DEM_phx_setup
+		DEM_phx_discharge
 )
 
 # ------------------------------------------------------------------------------
