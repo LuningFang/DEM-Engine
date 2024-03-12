@@ -198,7 +198,7 @@ int main() {
     auto max_v_finder = DEMSim.CreateInspector("clump_max_absv");
     float max_v;
 
-    float step_size = 5e-6;
+    float step_size = 1e-6;
     DEMSim.SetInitTimeStep(step_size);
     DEMSim.SetGravitationalAcceleration(make_float3(0, -981, 0));
     DEMSim.SetExpandSafetyType("auto");
@@ -213,8 +213,8 @@ int main() {
     out_dir += "/DemoOutput_phx_discharge";
     create_directory(out_dir);
 
-    float time_end = 3.0;
-    unsigned int fps = 20;
+    float time_end = 1.5;
+    unsigned int fps = 2000;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
 
     std::cout << "Output at " << fps << " FPS" << std::endl;
