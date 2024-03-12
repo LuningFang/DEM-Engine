@@ -187,7 +187,7 @@ int main() {
 
     DEMSim.SetFamilyFixed(plate_family);
     // Disable contacts within drum components
-    DEMSim.DisableContactBetweenFamilies(drum_family, drum_family);
+    DEMSim.DisableContactBetweenFamilies(plate_family, plate_family);
 
 ////////////////////////////////////////////////////
 

@@ -60,7 +60,7 @@ std::vector<float3> PopulateParticlePositions(float spacing,
     float box_Z = dim.z;
 
     float fill_y_bottom = -box_Y / 2.0f + 2 * spacing;
-    float fill_y_top = box_Y / 2.0f - spacing;
+    float fill_y_top = box_Y - spacing;
     float3 sampler_center = make_float3(0.0f, fill_y_bottom, 0.0f);
     float3 sampler_hdim = make_float3(box_X / 2.0f - spacing, 1e-6, box_Z / 2.0f - spacing);
 
@@ -135,7 +135,7 @@ int main() {
 
 
     DEMSim.InstructBoxDomainDimension({-bxDim / 2., bxDim / 2.}, 
-                                      {-byDim / 2., byDim / 2.},
+                                      {-byDim / 2., byDim},
                                       {-bzDim / 2., bzDim/  2.});
 
 
@@ -154,13 +154,14 @@ int main() {
     std::vector<std::shared_ptr<DEMClumpTemplate>> clump_types;
     double sand_density = 2.6e3;
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
-    double radius_array[3] = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
+
+    double radius_array[4] = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling, 0.1 * scaling};
 
     // ratio, 20%, 50%, 30%
     double mass;
 
     // Then randomly create some clump templates for filling the drum    
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         double volume = 4./3. * PI * std::pow(radius_array[i],3);
         mass = volume * sand_density;
         // Load a sphere type
@@ -217,7 +218,7 @@ int main() {
     DEMSim.Initialize();
 
     path out_dir = current_path();
-    out_dir += "/DemoOutput_phx_pins";
+    out_dir += "/DemoOutput_phx_mixture";
     create_directory(out_dir);
 
     float time_end = 3.0;
@@ -245,7 +246,7 @@ int main() {
     }
 
     char cp_filename[200];
-    sprintf(cp_filename, "%s/GRC_3e5.csv", out_dir.c_str());
+    sprintf(cp_filename, "%s/more_particles_settled_3e5.csv", out_dir.c_str());
     DEMSim.WriteClumpFile(std::string(cp_filename));
 
     DEMSim.ShowThreadCollaborationStats();
