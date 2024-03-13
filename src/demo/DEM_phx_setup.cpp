@@ -155,7 +155,7 @@ int main() {
     double sand_density = 2.6e3;
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
 
-    double radius_array[4] = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling, 0.1 * scaling};
+    double radius_array[4] = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling, 0.125 * scaling};
 
     // ratio, 20%, 50%, 30%
     double mass;
@@ -206,7 +206,7 @@ int main() {
     auto max_v_finder = DEMSim.CreateInspector("clump_max_absv");
     float max_v;
 
-    float step_size = 5e-6;
+    float step_size = 2e-6;
     DEMSim.SetInitTimeStep(step_size);
     DEMSim.SetGravitationalAcceleration(make_float3(0, -981, 0));
     DEMSim.SetExpandSafetyType("auto");
