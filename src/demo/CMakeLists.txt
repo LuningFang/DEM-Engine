@@ -42,6 +42,7 @@ SET(DEMOS
 		DEMdemo_Fracture_Box
 		DEM_phx_setup
 		DEM_phx_discharge
+		DEM_phx_periodic
 )
 
 # ------------------------------------------------------------------------------
