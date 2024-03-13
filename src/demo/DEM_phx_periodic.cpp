@@ -224,7 +224,7 @@ int main() {
     out_dir += "/DemoOutput_phx_periodic";
     create_directory(out_dir);
 
-    float time_end = 1.5;
+    float time_end = 5.;
     unsigned int fps = 100;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
 
