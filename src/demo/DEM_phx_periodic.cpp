@@ -58,6 +58,8 @@ int main() {
     int sand_family = 0;
     int recylcled_family = 1;
 
+    bool use_periodic = true;
+
     DEMSolver DEMSim;
     DEMSim.SetOutputFormat(OUTPUT_FORMAT::CSV);
     // Output family numbers (used to identify the centrifuging effect)
@@ -197,8 +199,12 @@ int main() {
     DEMSim.SetFamilyFixed(plate_family);
     // Disable contacts within drum components
     DEMSim.DisableContactBetweenFamilies(plate_family, plate_family);
-    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+21", "none");
-    DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
+
+    // prescribe motion
+    if (use_periodic == true){
+        DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+21", "none");
+        DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
+    }
 
 ////////////////////////////////////////////////////
 
@@ -221,7 +227,13 @@ int main() {
     DEMSim.Initialize();
 
     path out_dir = current_path();
-    out_dir += "/DemoOutput_phx_periodic";
+
+    if (use_periodic == true){
+        out_dir += "/DemoOutput_phx_periodic_true";
+    } else {
+        out_dir += "/DemoOutput_phx_periodic_false";
+    }
+
     create_directory(out_dir);
 
     float time_end = 1.5;
@@ -246,13 +258,11 @@ int main() {
 
 
             //////////////////periodic boundary
-
-            int num_changed = DEMSim.ChangeClumpFamily(recylcled_family, plate_x_range, plate_y_range, plate_z_range);
-
-            std::cout << "number of family changed: " << num_changed << std::endl;
-
-
-            DEMSim.DoDynamicsThenSync(0.);
+            if (use_periodic == true){
+                int num_changed = DEMSim.ChangeClumpFamily(recylcled_family, plate_x_range, plate_y_range, plate_z_range);
+                std::cout << "number of family changed: " << num_changed << std::endl;
+                DEMSim.DoDynamicsThenSync(0.);
+            }
 
 
             std::cout << "Frame: " << currframe << std::endl;
@@ -268,8 +278,12 @@ int main() {
 
         DEMSim.DoDynamics(step_size);
 
-        DEMSim.ChangeFamily(recylcled_family, sand_family);
-        DEMSim.DoDynamicsThenSync(0.);
+
+        if (use_periodic == true && curr_step % out_steps == 0){
+            DEMSim.ChangeFamily(recylcled_family, sand_family);
+            DEMSim.DoDynamicsThenSync(0.);
+
+        }
 
 
 
