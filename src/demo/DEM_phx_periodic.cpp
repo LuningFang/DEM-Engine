@@ -226,7 +226,7 @@ int main() {
     path out_dir = current_path();
 
     if (use_periodic == true){
-        out_dir += "/DemoOutput_phx_periodic_true";
+        out_dir += "/DemoOutput_phx_periodic_8mm_orifice";
     } else {
         out_dir += "/DemoOutput_phx_periodic_false";
     }
