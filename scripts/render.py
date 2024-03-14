@@ -131,6 +131,7 @@ for i in range(start_frame, end_frame, 1):
     count_gray = 0
     positions_blue = []
     positions_gray = []
+    radius_array = []
     for line in open(particle_file_name):
         if count == 0:
             count = count + 1
@@ -145,6 +146,8 @@ for i in range(start_frame, end_frame, 1):
             position_buff = (float(x), float(y), float(z))
             # color = line_seg[8]
             positions_gray.append(position_buff)
+            radius_array.append(line_seg[3])
+
             count_gray = count_gray + 1
             count = count + 1
 
@@ -197,7 +200,7 @@ for i in range(start_frame, end_frame, 1):
             f = scene.frame_current
             for m, particle in enumerate(gray_ps.particles):
                 setattr(particle, "location", positions_gray[m])
-                setattr(particle, "size", radius_particle)
+                setattr(particle, "size", radius_array[m])
 
     # Register both particle handlers
     bpy.app.handlers.frame_change_post.append(particle_handler_gray)
