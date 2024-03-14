@@ -22,7 +22,9 @@ if len(sys.argv) != 5:
     sys.exit(1)
 
 #============ specify the directory of csv, obj, image, and such
-data_sim = "/home/luning/phX/my-fork/build/bin/DemoOutput_phx_discharge/"
+# data_sim = "/home/luning/phX/my-fork/build/bin/DemoOutput_phx_discharge/"
+
+data_sim = "C:/Users/fang/Documents/phx/dem_results/orifice_8mm/"
 image_dir = data_sim + "image/"
 
 # if image_dir does not exist, create it
@@ -80,7 +82,7 @@ print(dis)
 #===========================================
 jobid = int(sys.argv[4])
 start_frame = jobid * 1
-end_frame = start_frame + 20
+end_frame = start_frame + 100
 for i in range(start_frame, end_frame, 1):
     #===========================================
     #======== check if the png file exits or not
@@ -139,14 +141,14 @@ for i in range(start_frame, end_frame, 1):
         else:
             # you have to parse "x", "y", "z" and "r" from the variable "line"
             line_seg = line.split(",")
-            x, y, z = line_seg[0], line_seg[1], line_seg[2]
+            x, y, z, r = line_seg[0], line_seg[1], line_seg[2], line_seg[3]
 
                     # if float(y) > 1.0 or float(y) < -1.0 or float(z) > 0.9:
             #     continue
             position_buff = (float(x), float(y), float(z))
             # color = line_seg[8]
             positions_gray.append(position_buff)
-            radius_array.append(line_seg[3])
+            radius_array.append(float(r))
 
             count_gray = count_gray + 1
             count = count + 1
@@ -155,6 +157,8 @@ for i in range(start_frame, end_frame, 1):
     print("count_gray: ", count_gray)
     print("particle position:")
     print(positions_gray[count_gray - 1])
+
+    print("radius array size: " + str(len(radius_array)))
     """ -------------- PARTICLE SYSTEM START-------------- """
 # Your positions_blue, positions_gray, count_blue, and radius_particle variables
 # should be defined here.
@@ -272,7 +276,10 @@ for i in range(start_frame, end_frame, 1):
     bpy.context.scene.cycles.samples = 256
     bpy.context.scene.render.resolution_x = res_x
     bpy.context.scene.render.resolution_y = res_y
-    bpy.context.scene.render.filepath = image_dir + str(i) + ".png"
+    # filename padded with zero
+    bpy.context.scene.render.filepath = image_dir + str(i).zfill(4) + ".png"
+
+    # bpy.context.scene.render.filepath = image_dir + str(i).fil + ".png"
     #bpy.context.scene.render.image_settings.compression = 50
     bpy.context.scene.render.image_settings.color_mode = 'RGBA'
     bpy.context.scene.render.image_settings.file_format = 'PNG'
