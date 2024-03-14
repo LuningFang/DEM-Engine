@@ -148,9 +148,6 @@ int main() {
 
         // Add them to the big long vector
 
-        // only add particles that this_type_xyz.y < -22
-        // go through every item in this_type_xyz, if the y value is less than -22, add it to the in_xyz
-        // and add the corresponding quaternion to in_quat
         in_xyz.insert(in_xyz.end(), this_type_xyz.begin(), this_type_xyz.end());
         in_quat.insert(in_quat.end(), this_type_quat.begin(), this_type_quat.end());
         in_types.insert(in_types.end(), this_type.begin(), this_type.end());
@@ -171,7 +168,7 @@ int main() {
 
     // Read plate particles from data file in data/sim_data/plate_pos.csv, skip the first header row, and assemble the value into a list of float3
     std::vector<float3> plate_particles;
-    std::ifstream plate_pos_file(GetDEMEDataFile("clumps/bottom_plate.csv"));
+    std::ifstream plate_pos_file(GetDEMEDataFile("clumps/bottom_plate_8mm.csv"));
     // file has 4 columns, x, y, z, and r, and the first row is the header
     // we only need the first 3 columns for the position
     std::string line;
@@ -236,7 +233,7 @@ int main() {
 
     create_directory(out_dir);
 
-    float time_end = 5.;
+    float time_end = 10.;
     unsigned int fps = 100;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
 
