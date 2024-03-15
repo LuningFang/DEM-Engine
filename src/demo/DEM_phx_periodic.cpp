@@ -226,7 +226,7 @@ int main() {
     path out_dir = current_path();
 
     if (use_periodic == true){
-        out_dir += "/DemoOutput_phx_periodic_8mm_orifice";
+        out_dir += "/DemoOutput_phx_periodic_8mm_orifice_2000fps";
     } else {
         out_dir += "/DemoOutput_phx_periodic_false";
     }
@@ -236,6 +236,10 @@ int main() {
     float time_end = 10.;
     unsigned int fps = 100;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
+
+    unsigned int write_fps = 2000; // write 2000 frames per second 
+    unsigned int write_out_steps = (unsigned int)(1.0 / (write_fps * step_size));
+    unsigned int csv_frame = 0;
 
     std::cout << "Output at " << fps << " FPS" << std::endl;
     unsigned int currframe = 0;
@@ -264,14 +268,19 @@ int main() {
 
             std::cout << "Frame: " << currframe << std::endl;
             std::cout << "Time: " << t << std::endl;
-            char filename[100];
-            sprintf(filename, "%s/DEMdemo_output_%04d.csv", out_dir.c_str(), currframe);
-            DEMSim.WriteSphereFile(std::string(filename));
-            currframe++;
 
 
             // DEMSim.SetFamilyPrescribedPosition(2, "X", "Y+17", "Z");
         }
+
+        // only write the last second of data
+        if (curr_step % write_out_steps == 0 && t >= (double) time_end - 1){
+            char filename[200];
+            sprintf(filename, "%s/DEM_frame_%06d.csv", out_dir.c_str(), csv_frame));
+            DEMSim.WriteClumpFile(std::string(filename));
+            csv_frame++;
+        }
+
 
         DEMSim.DoDynamics(step_size);
 
