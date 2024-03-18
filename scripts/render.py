@@ -22,9 +22,8 @@ if len(sys.argv) != 5:
     sys.exit(1)
 
 #============ specify the directory of csv, obj, image, and such
-# data_sim = "/home/luning/phX/my-fork/build/bin/DemoOutput_phx_discharge/"
-
-data_sim = "C:/Users/fang/Documents/phx/dem_results/orifice_8mm/"
+data_sim = "/srv/home/fang/phX/build_DEM/bin/DemoOutput_phx_periodic_8mm_orifice_2000fps/"
+# data_sim = "C:/Users/fang/Documents/phx/dem_results/orifice_8mm/"
 image_dir = data_sim + "image/"
 
 # if image_dir does not exist, create it
@@ -81,7 +80,7 @@ print(dis)
 #============================ Start the loop
 #===========================================
 jobid = int(sys.argv[4])
-start_frame = jobid * 1
+start_frame = jobid * 100
 end_frame = start_frame + 100
 for i in range(start_frame, end_frame, 1):
     #===========================================
@@ -123,7 +122,7 @@ for i in range(start_frame, end_frame, 1):
     #==================== Load SPH particle file
     #===========================================
     # load file name, padded with zeros
-    particle_file_name = data_sim + "DEMdemo_output_{:04d}.csv".format(i)
+    particle_file_name = data_sim + "DEM_frame_{:06d}.csv".format(i)
 
     # read particle_file_name using pandas and skip the header
     # use csv to read the file, and append to positions array
