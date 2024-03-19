@@ -7,9 +7,6 @@ import sys
 import os.path
 time = []
 
-# Radius of the particle
-radius_particle = 0.02
-
 
 # Resolution of the output image
 # res_x = 1920
