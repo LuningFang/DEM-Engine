@@ -16,6 +16,9 @@ radius_particle = 0.02
 res_x = 802
 res_y = 1282
 
+# look up table for clump type and corresponding radius
+clump_radius = {'0000': 0.0212, '0001':0.02, '0002':0.0178, '0003': 0.025 }
+
 print(sys.argv)
 if len(sys.argv) != 5:
     print("usage ./blender --python --background animation_script_batch start_frame")
@@ -23,7 +26,8 @@ if len(sys.argv) != 5:
 
 #============ specify the directory of csv, obj, image, and such
 data_sim = "/srv/home/fang/phX/build_DEM/bin/DemoOutput_phx_periodic_8mm_orifice_2000fps/"
-# data_sim = "C:/Users/fang/Documents/phx/dem_results/orifice_8mm/"
+
+#data_sim = "C:/Users/fang/Documents/phx/dem_results/8mm_2000fps/"
 image_dir = data_sim + "image/"
 
 # if image_dir does not exist, create it
@@ -140,14 +144,16 @@ for i in range(start_frame, end_frame, 1):
         else:
             # you have to parse "x", "y", "z" and "r" from the variable "line"
             line_seg = line.split(",")
-            x, y, z, r = line_seg[0], line_seg[1], line_seg[2], line_seg[3]
+            x, y, z = line_seg[0], line_seg[1], line_seg[2]
+
+            clump_type = line_seg[7]
 
                     # if float(y) > 1.0 or float(y) < -1.0 or float(z) > 0.9:
             #     continue
             position_buff = (float(x), float(y), float(z))
             # color = line_seg[8]
             positions_gray.append(position_buff)
-            radius_array.append(float(r))
+            radius_array.append(float(clump_radius[clump_type]))
 
             count_gray = count_gray + 1
             count = count + 1
