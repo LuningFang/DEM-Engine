@@ -65,7 +65,7 @@ int main() {
 
 
     DEMSim.InstructBoxDomainDimension({-bxDim / 2., bxDim / 2.}, 
-                                      {-36.       , byDim / 2.},
+                                      {-36.       , byDim},
                                       {-bzDim / 2., bzDim/  2.});
 
 
@@ -84,13 +84,13 @@ int main() {
     std::vector<std::shared_ptr<DEMClumpTemplate>> clump_types;
     double sand_density = 2.6e3;
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
-    double radius_array[3] = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
+    double radius_array[4] = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling, 0.125 * scaling};
 
     // ratio, 20%, 50%, 30%
     double mass;
 
     // Then randomly create some clump templates for filling the drum    
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         double volume = 4./3. * PI * std::pow(radius_array[i],3);
         mass = volume * sand_density;
         // Load a sphere type
@@ -116,14 +116,14 @@ int main() {
     // load the particles
 
 
-    auto part1_clump_xyz = DEMSim.ReadClumpXyzFromCsv("./DemoOutput_phx_pins/settled.csv");
-    auto part1_clump_quaternion = DEMSim.ReadClumpQuatFromCsv("./DemoOutput_phx_pins/settled.csv");
+    auto part1_clump_xyz = DEMSim.ReadClumpXyzFromCsv("../../input_particle_positions/more_particles_settled_3e5.csv");
+    auto part1_clump_quaternion = DEMSim.ReadClumpQuatFromCsv("../../input_particle_positions/more_particles_settled_3e5.csv");
 
     std::vector<float3> in_xyz;
     std::vector<float4> in_quat;
     std::vector<std::shared_ptr<DEMClumpTemplate>> in_types;
     unsigned int t_num = 0;
-    unsigned int sphere_types = 3;
+    unsigned int sphere_types = 4;
     for (int i = 0; i < sphere_types; i++) {
         char t_name[20];
         sprintf(t_name, "%04d", t_num);
@@ -210,11 +210,11 @@ int main() {
     DEMSim.Initialize();
 
     path out_dir = current_path();
-    out_dir += "/DemoOutput_phx_discharge";
+    out_dir += "/DemoOutput_phx_discharge_400_fps";
     create_directory(out_dir);
 
-    float time_end = 1.5;
-    unsigned int fps = 2000;
+    float time_end = 3;
+    unsigned int fps = 400;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
 
     std::cout << "Output at " << fps << " FPS" << std::endl;

@@ -276,7 +276,7 @@ int main() {
         // only write the last second of data
         if (curr_step % write_out_steps == 0 && t >= (double) time_end - 1){
             char filename[200];
-            sprintf(filename, "%s/DEM_frame_%06d.csv", out_dir.c_str(), csv_frame));
+            sprintf(filename, "%s/DEM_frame_%06d.csv", out_dir.c_str(), csv_frame);
             DEMSim.WriteClumpFile(std::string(filename));
             csv_frame++;
         }
