@@ -7,9 +7,6 @@ import sys
 import os.path
 time = []
 
-# Radius of the particle
-radius_particle = 0.02
-
 
 # Resolution of the output image
 # res_x = 1920
@@ -25,9 +22,9 @@ if len(sys.argv) != 5:
     sys.exit(1)
 
 #============ specify the directory of csv, obj, image, and such
-# data_sim = "/home/luning/phX/my-fork/build/bin/DemoOutput_phx_discharge/"
+data_sim = "/srv/home/fang/phX/build_DEM/bin/DemoOutput_phx_periodic_8mm_orifice_2000fps/"
 
-data_sim = "C:/Users/fang/Documents/phx/dem_results/8mm_2000fps/"
+#data_sim = "C:/Users/fang/Documents/phx/dem_results/8mm_2000fps/"
 image_dir = data_sim + "image/"
 
 # if image_dir does not exist, create it
@@ -84,7 +81,7 @@ print(dis)
 #============================ Start the loop
 #===========================================
 jobid = int(sys.argv[4])
-start_frame = jobid * 1
+start_frame = jobid * 100
 end_frame = start_frame + 100
 for i in range(start_frame, end_frame, 1):
     #===========================================
