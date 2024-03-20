@@ -74,7 +74,7 @@ int main() {
 
 
     DEMSim.InstructBoxDomainDimension({-bxDim / 2., bxDim / 2.}, 
-                                      {-36.       , byDim / 2.},
+                                      {-36.       , byDim},
                                       {-bzDim / 2., bzDim/  2.});
 
 
@@ -93,13 +93,13 @@ int main() {
     std::vector<std::shared_ptr<DEMClumpTemplate>> clump_types;
     double sand_density = 2.6e3;
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
-    double radius_array[3] = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
+    double radius_array[4] = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling, 0.125 * scaling};
 
     // ratio, 20%, 50%, 30%
     double mass;
 
     // Then randomly create some clump templates for filling the drum    
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         double volume = 4./3. * PI * std::pow(radius_array[i],3);
         mass = volume * sand_density;
         // Load a sphere type
@@ -124,15 +124,14 @@ int main() {
 
     // load the particles
 
-
-    auto part1_clump_xyz = DEMSim.ReadClumpXyzFromCsv("./DemoOutput_phx_pins/settled.csv");
-    auto part1_clump_quaternion = DEMSim.ReadClumpQuatFromCsv("./DemoOutput_phx_pins/settled.csv");
+    auto part1_clump_xyz = DEMSim.ReadClumpXyzFromCsv("../../input_particle_positions/more_particles_settled_3e5.csv");
+    auto part1_clump_quaternion = DEMSim.ReadClumpQuatFromCsv("../../input_particle_positions/more_particles_settled_3e5.csv");
 
     std::vector<float3> in_xyz;
     std::vector<float4> in_quat;
     std::vector<std::shared_ptr<DEMClumpTemplate>> in_types;
     unsigned int t_num = 0;
-    unsigned int sphere_types = 3;
+    unsigned int sphere_types = 4;
     for (int i = 0; i < sphere_types; i++) {
         char t_name[20];
         sprintf(t_name, "%04d", t_num);
@@ -199,7 +198,7 @@ int main() {
 
     // prescribe motion
     if (use_periodic == true){
-        DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+21", "none");
+        DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+26", "none");
         DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
     }
 
@@ -226,7 +225,7 @@ int main() {
     path out_dir = current_path();
 
     if (use_periodic == true){
-        out_dir += "/DemoOutput_phx_periodic_8mm_orifice_2000fps";
+        out_dir += "/DemoOutput_phx_periodic_8mm_orifice_4type";
     } else {
         out_dir += "/DemoOutput_phx_periodic_false";
     }
@@ -249,7 +248,7 @@ int main() {
 
     std::pair<float, float> plate_x_range = std::make_pair(-bxDim / 2., bxDim / 2.);
     std::pair<float, float> plate_z_range = std::make_pair(-bzDim / 2., bzDim / 2.);
-    std::pair<float, float> plate_y_range = std::make_pair(-28., -25.);
+    std::pair<float, float> plate_y_range = std::make_pair(-28., -26.);
 
     for (double t = 0; t < (double)time_end; t += step_size, curr_step++) {
         if (curr_step % out_steps == 0) {
@@ -270,20 +269,17 @@ int main() {
             std::cout << "Time: " << t << std::endl;
 
 
-            // DEMSim.SetFamilyPrescribedPosition(2, "X", "Y+17", "Z");
         }
 
         // only write the last second of data
-        if (curr_step % write_out_steps == 0 && t >= (double) time_end - 1){
+        if (curr_step % write_out_steps == 0 && t >= (double) time_end - 1 ){
             char filename[200];
-            sprintf(filename, "%s/DEM_frame_%06d.csv", out_dir.c_str(), csv_frame);
-            DEMSim.WriteClumpFile(std::string(filename));
+            sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
+            DEMSim.WriteSphereFile(std::string(filename));
             csv_frame++;
         }
 
-
         DEMSim.DoDynamics(step_size);
-
 
         if (use_periodic == true && curr_step % out_steps == 0){
             DEMSim.ChangeFamily(recylcled_family, sand_family);
