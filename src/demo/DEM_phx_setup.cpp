@@ -4,10 +4,7 @@
 //	SPDX-License-Identifier: BSD-3-Clause
 
 // =============================================================================
-// This demo features an analytical boundary-represented fast rotating container
-// with particles of various shapes pulled into it. Different types of particles
-// are marked with different family numbers (identification numbers) for easier
-// visualizations.
+// TODO: at the end of the script, print out stats like bulk density, 
 // =============================================================================
 
 #include <core/ApiVersion.h>
@@ -22,6 +19,7 @@
 
 using namespace deme;
 using namespace std::filesystem;
+
 
 
 // Read pin positions from a file

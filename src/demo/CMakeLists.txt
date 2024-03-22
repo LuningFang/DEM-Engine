@@ -43,6 +43,7 @@ SET(DEMOS
 		DEM_phx_setup
 		DEM_phx_discharge
 		DEM_phx_periodic
+		DEM_tpms
 )
 
 # ------------------------------------------------------------------------------
