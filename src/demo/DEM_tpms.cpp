@@ -235,10 +235,10 @@ int main() {
     DEMSim.Initialize();
 
     path out_dir = current_path();
-    out_dir += "/DemoOutput_phx_tpms_periodic_old";
+    out_dir += "/DemoOutput_phx_tpms_periodic_10sec";
     create_directory(out_dir);
 
-    float time_end = 3.0;
+    float time_end = 10.0;
     unsigned int fps = 50;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
 

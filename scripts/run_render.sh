@@ -6,7 +6,7 @@
 #SBATCH -e zoom_blender-%j.err
 #SBATCH --account=sbel
 #SBATCH --qos=priority
-#SBATCH --array=1-19
+#SBATCH --array=1-2
 #SBATCH --mem-per-cpu=10000
 nvidia-smi
 
