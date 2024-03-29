@@ -47,7 +47,17 @@ std::vector<float3> ReadPinPositions(std::string filename) {
 }
 
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    
+
+    // input parameters
+    if (argc != 2) {
+        std::cout << "Usage: DEM_phx_periodic [cor]" << std::endl;
+        return 1;
+    }
+
+    float coeff_res = std::stof(argv[1]);
 
     double bxDim = 5.0;
     double byDim = 48.0;
@@ -69,8 +79,8 @@ int main() {
     // If you don't need individual force information, then this option makes the solver run a bit faster.
     DEMSim.SetNoForceRecord();
 
-    auto mat_type_sand = DEMSim.LoadMaterial({{"E", 1e9}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.5}, {"Crr", 0.01}});
-    auto mat_type_plate = DEMSim.LoadMaterial({{"E", 2e9}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.5}, {"Crr", 0.01}});
+    auto mat_type_sand = DEMSim.LoadMaterial({{"E", 1e9}, {"nu", 0.3}, {"CoR", coeff_res}, {"mu", 0.5}, {"Crr", 0.01}});
+    auto mat_type_plate = DEMSim.LoadMaterial({{"E", 2e9}, {"nu", 0.3}, {"CoR", coeff_res}, {"mu", 0.5}, {"Crr", 0.01}});
 
 
     DEMSim.InstructBoxDomainDimension({-bxDim / 2., bxDim / 2.}, 
@@ -225,11 +235,15 @@ int main() {
     path out_dir = current_path();
 
     if (use_periodic == true){
-        out_dir += "/DemoOutput_phx_periodic_8mm_orifice_4type";
+        out_dir += "/phx_periodic_8mm_orifice_4types";
     } else {
         out_dir += "/DemoOutput_phx_periodic_false";
     }
 
+    create_directory(out_dir);
+
+    // add the coefficient of restitution to the output directory, use argv[1] as the folder name
+    out_dir += "/cor_" + std::string(argv[1]);
     create_directory(out_dir);
 
     float time_end = 10.;
