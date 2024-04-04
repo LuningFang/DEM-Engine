@@ -38,9 +38,9 @@ int main() {
     std::string tag = "test";
 
     float conctact_friction = 0.1;  // takes the value
-    float massMultiplier = 1.00;     // takes the value
+    float massMultiplier = 100.00;     // takes the value
 
-    std::string out_dir = "/DemoOutput_Hookean_mu_0.1/" ;
+    std::string out_dir = "/DemoOutput_Hookean_mu_0.1_real/" ;
     out_dir += "Test_" + tag + "/";
 
     std::cout << "Running case with friction: " << conctact_friction << ", and Mass multiplier: " << massMultiplier
@@ -66,19 +66,23 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
     remove_all(out_dir);
     create_directories(out_dir);
 
+    double kn_ratio = 4e6;
+    float terrain_rad = 0.01;
+    float gravityMagnitude = 10;
+    float sphere_mass = 0.01;
+
+
+    double kn = kn_ratio * sphere_mass * gravityMagnitude / terrain_rad;
+
     auto mat_type_sphere = DEMSim.LoadMaterial({{"kn", 4e5}, {"kt", 4e5}, {"mu", frictionMaterial}, {"CoR", 0.01}});
-
     auto mat_type_box = DEMSim.LoadMaterial({{"kn", 4e5}, {"kt", 4e5}, {"mu", frictionMaterial}, {"CoR", 0.01}});
-
     auto my_force_model = DEMSim.DefineContactForceModel(force_model());
 
     my_force_model->SetMustHaveMatProp({"kn", "kt", "mu", "CoR"});
     my_force_model->SetPerContactWildcards({"delta_time", "delta_tan_x", "delta_tan_y", "delta_tan_z"});
 
-    float terrain_rad = 0.01;
-    float gravityMagnitude = 9.81;
     float DTc = PI * terrain_rad * sqrt(1e3 / (1e7 / (2 * (1 + 0.33)))) / (0.8766 + 0.163 * 0.33);
- //float step_size = 5 * 1.0e-5 * sqrt(terrain_rad * gravityMagnitude);
+
     float step_size = 1e-7;
     std::cout << "step size is : " << step_size << std::endl;
     double world_sizeX = 122.0 * terrain_rad;  // 122 works fine for frictionless
@@ -88,20 +92,11 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
                                       {-1 * world_sizeZ, 10 * terrain_rad});
     DEMSim.InstructBoxDomainBoundingBC("top_open", mat_type_box);
 
-    // Force model to use
-    // auto model2D = DEMSim.ReadContactForceModel("ForceModel2D.cu");
-    // model2D->SetMustHaveMatProp({"E", "nu", "CoR", "mu", "Crr"});
-    // model2D->SetMustPairwiseMatProp({"CoR", "mu", "Crr"});
-    // model2D->SetPerContactWildcards({"delta_time", "delta_tan_x", "delta_tan_y", "delta_tan_z"});
-
     // creating the two clump templates we need, which are just spheres
     std::vector<std::shared_ptr<DEMClumpTemplate>> templates_terrain;
 
-    templates_terrain.push_back(DEMSim.LoadSphereType(terrain_rad * terrain_rad * terrain_rad * 4 / 3 * 1.0e3 * PI,
-                                                      terrain_rad, mat_type_sphere));
-
-    templates_terrain.push_back(DEMSim.LoadSphereType(terrain_rad * terrain_rad * terrain_rad * 4 / 3 * 1.0e3 * PI,
-                                                      terrain_rad, mat_type_sphere));
+    templates_terrain.push_back(DEMSim.LoadSphereType(sphere_mass, terrain_rad, mat_type_sphere));
+    templates_terrain.push_back(DEMSim.LoadSphereType(sphere_mass, terrain_rad, mat_type_sphere));
 
     // templates_terrain=DEMSim.LoadSphereType();
     unsigned int num_particle = 0;
@@ -132,12 +127,12 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
     zeroParticle->SetFamily(3);
     auto driver = DEMSim.Track(zeroParticle);
 
-    float Aext = -gravityMagnitude * (massMultiplier);
+    float Aext = -gravityMagnitude * (massMultiplier) * sphere_mass;
     float timeApplication = abs(Aext) > abs(gravityMagnitude) ? 2 * sqrt(terrain_rad * abs(Aext))
                                                               : 2 * sqrt(terrain_rad * abs(gravityMagnitude));
     std::string Aext_pattern =
         to_string_with_precision(Aext) + "*erf(t/sqrt(" + to_string_with_precision(timeApplication) + "))";
-    std::cout << "applying this force law" << timeApplication << std::endl;
+    std::cout << "applying this force law " << timeApplication << std::endl;
     DEMSim.AddFamilyPrescribedAcc(2, "none", "none", Aext_pattern);
 
     num_particle += input_xyz.size();
@@ -152,7 +147,7 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
 
     float sim_time = 20.0;
     float time_settling = 5.0;
-    unsigned int fps = 100;
+    unsigned int fps = 10;
     float frame_time = 1.0 / fps;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
 
