@@ -73,9 +73,10 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
 
 
     double kn = kn_ratio * sphere_mass * gravityMagnitude / terrain_rad;
+    double kt = kn;
 
-    auto mat_type_sphere = DEMSim.LoadMaterial({{"kn", 4e5}, {"kt", 4e5}, {"mu", frictionMaterial}, {"CoR", 0.01}});
-    auto mat_type_box = DEMSim.LoadMaterial({{"kn", 4e5}, {"kt", 4e5}, {"mu", frictionMaterial}, {"CoR", 0.01}});
+    auto mat_type_sphere = DEMSim.LoadMaterial({{"kn", kn}, {"kt", kt}, {"mu", frictionMaterial}, {"CoR", 0.01}});
+    auto mat_type_box = DEMSim.LoadMaterial({{"kn", kn}, {"kt", kt}, {"mu", frictionMaterial}, {"CoR", 0.01}});
     auto my_force_model = DEMSim.DefineContactForceModel(force_model());
 
     my_force_model->SetMustHaveMatProp({"kn", "kt", "mu", "CoR"});
@@ -127,7 +128,7 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
     zeroParticle->SetFamily(3);
     auto driver = DEMSim.Track(zeroParticle);
 
-    float Aext = -gravityMagnitude * (massMultiplier) * sphere_mass;
+    float Aext = -gravityMagnitude * (massMultiplier);
     float timeApplication = abs(Aext) > abs(gravityMagnitude) ? 2 * sqrt(terrain_rad * abs(Aext))
                                                               : 2 * sqrt(terrain_rad * abs(gravityMagnitude));
     std::string Aext_pattern =
@@ -145,8 +146,8 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
 
     DEMSim.Initialize();
 
-    float sim_time = 20.0;
-    float time_settling = 5.0;
+    float sim_time = 5.0;
+    float time_settling = 2.0;
     unsigned int fps = 10;
     float frame_time = 1.0 / fps;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
