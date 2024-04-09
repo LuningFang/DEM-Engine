@@ -40,7 +40,7 @@ int main() {
     float conctact_friction = 0.1;  // takes the value
     float massMultiplier = 100.00;     // takes the value
 
-    std::string out_dir = "/DemoOutput_Hookean_mu_0.1_real/" ;
+    std::string out_dir = "/DemoOutput_Hookean_mu_0.1_kn_1e9/" ;
     out_dir += "Test_" + tag + "/";
 
     std::cout << "Running case with friction: " << conctact_friction << ", and Mass multiplier: " << massMultiplier
@@ -66,7 +66,7 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
     remove_all(out_dir);
     create_directories(out_dir);
 
-    double kn_ratio = 4e6;
+    double kn_ratio = 1e9;
     float terrain_rad = 0.01;
     float gravityMagnitude = 10;
     float sphere_mass = 0.01;
@@ -84,7 +84,7 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
 
     float DTc = PI * terrain_rad * sqrt(1e3 / (1e7 / (2 * (1 + 0.33)))) / (0.8766 + 0.163 * 0.33);
 
-    float step_size = 1e-7;
+    float step_size = 1e-9;
     std::cout << "step size is : " << step_size << std::endl;
     double world_sizeX = 122.0 * terrain_rad;  // 122 works fine for frictionless
     double world_sizeZ = 27 * terrain_rad;
