@@ -40,7 +40,7 @@ int main() {
     float conctact_friction = 0.1;  // takes the value
     float massMultiplier = 100.00;     // takes the value
 
-    std::string out_dir = "/DemoOutput_Hookean_mu_0.1_kn_1e9/" ;
+    std::string out_dir = "/DemoOutput_mu_0.1_kn_1e9/" ;
     out_dir += "Test_" + tag + "/";
 
     std::cout << "Running case with friction: " << conctact_friction << ", and Mass multiplier: " << massMultiplier
@@ -53,13 +53,17 @@ int main() {
 }
 
 void runDEME(std::string dir_output, float frictionMaterial, float massMultiplier) {
+
+    float sim_time = 2.0;
+    float time_settling = 0.6;
+
     DEMSolver DEMSim;
     DEMSim.UseFrictionalHertzianModel();
     DEMSim.SetVerbosity("ERROR");
     DEMSim.SetOutputFormat("CSV");
     DEMSim.SetOutputContent({"ABSV"});
     DEMSim.SetMeshOutputFormat("VTK");
-    DEMSim.SetContactOutputContent(DEME_POINT | OWNER | FORCE | CNT_WILDCARD);
+    DEMSim.SetContactOutputContent(DEME_POINT | OWNER | FORCE);
 
     path out_dir = current_path();
     out_dir += dir_output;
@@ -82,9 +86,7 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
     my_force_model->SetMustHaveMatProp({"kn", "kt", "mu", "CoR"});
     my_force_model->SetPerContactWildcards({"delta_time", "delta_tan_x", "delta_tan_y", "delta_tan_z"});
 
-    float DTc = PI * terrain_rad * sqrt(1e3 / (1e7 / (2 * (1 + 0.33)))) / (0.8766 + 0.163 * 0.33);
-
-    float step_size = 1e-9;
+    float step_size = 5e-9;
     std::cout << "step size is : " << step_size << std::endl;
     double world_sizeX = 122.0 * terrain_rad;  // 122 works fine for frictionless
     double world_sizeZ = 27 * terrain_rad;
@@ -129,12 +131,14 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
     auto driver = DEMSim.Track(zeroParticle);
 
     float Aext = -gravityMagnitude * (massMultiplier);
-    float timeApplication = abs(Aext) > abs(gravityMagnitude) ? 2 * sqrt(terrain_rad * abs(Aext))
-                                                              : 2 * sqrt(terrain_rad * abs(gravityMagnitude));
+    float timeApplication = 0.3;
+
     std::string Aext_pattern =
-        to_string_with_precision(Aext) + "*erf(t/sqrt(" + to_string_with_precision(timeApplication) + "))";
+        to_string_with_precision(Aext / timeApplication) + "*(t-" + to_string_with_precision(time_settling) + ")";
     std::cout << "applying this force law " << Aext_pattern << std::endl;
     DEMSim.AddFamilyPrescribedAcc(2, "none", "none", Aext_pattern);
+
+    DEMSim.AddFamilyPrescribedAcc(4, "none", "none", to_string_with_precision(Aext));
 
     num_particle += input_xyz.size();
 
@@ -146,9 +150,7 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
 
     DEMSim.Initialize();
 
-    float sim_time = 2.0;
-    float time_settling = 1.0;
-    unsigned int fps = 10;
+    unsigned int fps = 100;
     float frame_time = 1.0 / fps;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
 
@@ -158,6 +160,7 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
 
     bool status = true;
     bool changeMaterial = true;
+    bool const_force = true;
 
     for (float t = 0; t < sim_time; t += frame_time) {
         std::cout << "Output file: " << currframe << std::endl;
@@ -171,19 +174,22 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
 
         DEMSim.DoDynamicsThenSync(frame_time);
 
-        if (t > time_settling / 2 && changeMaterial) {
-            DEMSim.DoDynamicsThenSync(0);
-            std::cout << "Including restitution coefficient" << std::endl;
-            changeMaterial = false;
-            DEMSim.SetFamilyClumpMaterial(1, mat_type_sphere);
-        }
-
         if (t > time_settling && status) {
             DEMSim.DoDynamicsThenSync(0);
             DEMSim.ChangeFamily(3, 2);
             std::cout << "Extra mass applied" << std::endl;
             status = false;
-            DEMSim.DoDynamicsThenSync(timeApplication);
+        }
+
+        if (t > time_settling + timeApplication && const_force) {
+
+            DEMSim.DoDynamicsThenSync(0);
+            DEMSim.ChangeFamily(2, 4);
+            const_force = false;
+        }
+
+        if (t > time_settling && t < time_settling + timeApplication){
+            std::cout << "time = " << t << " sec, " << "F = " << Aext / timeApplication * (t- time_settling) << " m" << std::endl;
         }
     }
 
