@@ -133,7 +133,7 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
                                                               : 2 * sqrt(terrain_rad * abs(gravityMagnitude));
     std::string Aext_pattern =
         to_string_with_precision(Aext) + "*erf(t/sqrt(" + to_string_with_precision(timeApplication) + "))";
-    std::cout << "applying this force law " << timeApplication << std::endl;
+    std::cout << "applying this force law " << Aext_pattern << std::endl;
     DEMSim.AddFamilyPrescribedAcc(2, "none", "none", Aext_pattern);
 
     num_particle += input_xyz.size();
@@ -146,8 +146,8 @@ void runDEME(std::string dir_output, float frictionMaterial, float massMultiplie
 
     DEMSim.Initialize();
 
-    float sim_time = 5.0;
-    float time_settling = 2.0;
+    float sim_time = 2.0;
+    float time_settling = 1.0;
     unsigned int fps = 10;
     float frame_time = 1.0 / fps;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
