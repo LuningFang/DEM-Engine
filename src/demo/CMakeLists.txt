@@ -44,6 +44,7 @@ SET(DEMOS
 		DEM_phx_discharge
 		DEM_phx_periodic
 		DEM_tpms
+		DEM_phx_mesh_pins
 )
 
 # ------------------------------------------------------------------------------
