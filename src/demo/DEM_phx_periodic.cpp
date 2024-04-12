@@ -23,6 +23,12 @@
 using namespace deme;
 using namespace std::filesystem;
 
+// define a union of pin types, cylinder, half_teardop, full_teardrop
+enum PinType {
+    CYLINDER = 0,
+    HALF_TEARDROP = 1,
+    FULL_TEARDROP = 2
+};
 
 // Read pin positions from a file
 std::vector<float3> ReadPinPositions(std::string filename) {
@@ -49,12 +55,31 @@ std::vector<float3> ReadPinPositions(std::string filename) {
 
 int main(int argc, char* argv[]) {
 
-    
 
     // input parameters
     if (argc != 2) {
         std::cout << "Usage: DEM_phx_periodic [cor]" << std::endl;
         return 1;
+    }
+
+    PinType pin_type = PinType::FULL_TEARDROP;
+    std::string input_particle_positions;
+
+    switch (pin_type){
+        case PinType::CYLINDER:
+            input_particle_positions = "../../input_particle_positions/cylinder_pins_particles_settled.csv";
+            break;
+        
+        case PinType::HALF_TEARDROP:
+            input_particle_positions = "../../input_particle_positions/teardrop_half_particles_settled.csv";
+            break;
+
+        case PinType::FULL_TEARDROP:
+            input_particle_positions = "../../input_particle_positions/teardrop_full_particles_settled.csv";
+            break;
+
+        default:
+            break;
     }
 
     float coeff_res = std::stof(argv[1]);
@@ -119,23 +144,49 @@ int main(int argc, char* argv[]) {
     ///////////////////////////////////////////////////////////////////////
     // Cylindrical pins //////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////
-    float3 CylAxis = make_float3(0, 0, 1);
-    float tube_radius = 0.2;
 
     // read pin center from data file in data/sim_data/pin_pos.csv, skip the first header row, and assemble the value into a list of float3
     std::vector<float3> pin_centers = ReadPinPositions("sim_data/pin_pos.csv");
     std::cout << "number of pins: " << pin_centers.size() << std::endl;
 
     for (auto pin_center : pin_centers) {
-        auto pin = DEMSim.AddExternalObject();
-        pin->AddCylinder(pin_center, CylAxis, tube_radius, mat_type_plate, 1); // outward normal
-        std::cout << "added cylinder at " << pin_center.x << ", " << pin_center.y << ", " << pin_center.z << std::endl;
+
+        switch (pin_type){
+            case PinType::CYLINDER:
+{                float3 CylAxis = make_float3(0, 0, 1);
+                float tube_radius = 0.2;
+                auto pin = DEMSim.AddExternalObject();
+                pin->AddCylinder(pin_center, CylAxis, tube_radius, mat_type_plate, 1); // outward normal
+
+                break;
+}                
+            case PinType::HALF_TEARDROP:
+{                auto pin = DEMSim.AddWavefrontMeshObject("../data/mesh/half_teardrop.obj", mat_type_plate);
+                float4 rot = make_float4(1, 0, 0, 0);
+                pin->Move(pin_center, rot);
+                break;
+}
+            case PinType::FULL_TEARDROP:
+{                auto pin = DEMSim.AddWavefrontMeshObject("../data/mesh/full_teardrop.obj", mat_type_plate);
+                float4 rot = make_float4(1, 0, 0, 0);
+                pin->Move(pin_center, rot);
+                break;
+}
+            default:
+                break;
+        }
+        std::cout << "added pin at " << pin_center.x << ", " << pin_center.y << ", " << pin_center.z << std::endl;
+
     }
+
+    // if (pin_type == PinType::HALF_TEARDROP || pin_type == PinType::FULL_TEARDROP){
+    //     DEMSim.SetFamilyFixed(10);
+    // }
 
     // load the particles
 
-    auto part1_clump_xyz = DEMSim.ReadClumpXyzFromCsv("../../input_particle_positions/more_particles_settled_3e5.csv");
-    auto part1_clump_quaternion = DEMSim.ReadClumpQuatFromCsv("../../input_particle_positions/more_particles_settled_3e5.csv");
+    auto part1_clump_xyz = DEMSim.ReadClumpXyzFromCsv(input_particle_positions);
+    auto part1_clump_quaternion = DEMSim.ReadClumpQuatFromCsv(input_particle_positions);
 
     std::vector<float3> in_xyz;
     std::vector<float4> in_quat;
@@ -230,14 +281,15 @@ int main(int argc, char* argv[]) {
     // velocity derivation algorithm currently cannot take analytical object's angular velocity-induced velocity into
     // account.
     DEMSim.SetExpandSafetyAdder(6.0);
+    DEMSim.SetErrorOutVelocity(1e8);
     DEMSim.Initialize();
 
     path out_dir = current_path();
 
     if (use_periodic == true){
-        out_dir += "/phx_periodic_8mm_orifice_4types";
+        out_dir += "/phx_periodic_teardrop";
     } else {
-        out_dir += "/DemoOutput_phx_periodic_false";
+        out_dir += "/DemoOutput_teardrop_discharge";
     }
 
     create_directory(out_dir);
@@ -290,19 +342,17 @@ int main(int argc, char* argv[]) {
             char filename[200];
             sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
             DEMSim.WriteSphereFile(std::string(filename));
+            std::cout << "write file: " << filename << std::endl;
             csv_frame++;
         }
 
-        DEMSim.DoDynamics(step_size);
 
+
+        DEMSim.DoDynamics(step_size);
         if (use_periodic == true && curr_step % out_steps == 0){
             DEMSim.ChangeFamily(recylcled_family, sand_family);
             DEMSim.DoDynamicsThenSync(0.);
-
         }
-
-
-
     }
 
     char cp_filename[200];
