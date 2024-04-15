@@ -30,6 +30,8 @@ if sys.argv[5] == "0":
     pin_type = "half_teardrop"
 elif sys.argv[5] == "1":
     pin_type = "full_teardrop"
+elif sys.argv[5] == "2":
+    pin_type = "cylinder_bld"
 
 #============ specify the directory of csv, obj, image, and such
 data_sim = "/srv/home/fang/phX/build_DEM/bin/phx_periodic_" + pin_type + "/cor_0.6/"
