@@ -168,25 +168,29 @@ int main() {
 
     // Add the cylinder pins
     float3 CylAxis = make_float3(0, 0, 1);
-    float tube_radius = 0.2;
-    float CylHeight = bzDim*1.2;
-    float safe_delta = 0.03;
+    float pin_dim_y = 0.9;
 
     // read pin center from data file in data/sim_data/pin_pos.csv, skip the first header row, and assemble the value into a list of float3
     std::vector<float3> pin_centers = ReadPinPositions("sim_data/pin_pos.csv");
     std::cout << "number of pins: " << pin_centers.size() << std::endl;
 
     for (auto pin_center : pin_centers) {
-        auto pin = DEMSim.AddExternalObject();
-        pin->AddCylinder(pin_center, CylAxis, tube_radius, mat_type_drum, 1); // outward normal
-        std::cout << "added cylinder at " << pin_center.x << ", " << pin_center.y << ", " << pin_center.z << std::endl;
+        auto pin = DEMSim.AddWavefrontMeshObject("../data/mesh/full_teardrop.obj", mat_type_drum);
+        float4 rot = make_float4(1, 0, 0, 0);
+        pin->Move(pin_center, rot);
+        pin->SetFamily(10);
+
+
+        std::cout << "added pin at " << pin_center.x << ", " << pin_center.y << ", " << pin_center.z << std::endl;
     }
+    DEMSim.SetFamilyFixed(10);
+
     // Then sample some particles inside the drum
     std::vector<std::shared_ptr<DEMClumpTemplate>> input_template_type;
     std::vector<float3> input_xyz;
     std::vector<unsigned int> family_code;
 
-    input_xyz =  PopulateParticlePositions(2.02 * radius_array[0], make_float3(bxDim, byDim, bzDim), pin_centers, tube_radius);
+    input_xyz =  PopulateParticlePositions(2.02 * radius_array[0], make_float3(bxDim, byDim, bzDim), pin_centers, pin_dim_y / 2.0);
 
     std::cout << "number of particles: " << input_xyz.size() << std::endl;
 
@@ -216,7 +220,7 @@ int main() {
     DEMSim.Initialize();
 
     path out_dir = current_path();
-    out_dir += "/DemoOutput_phx_mixture";
+    out_dir += "/DemoOutput_phx_full_teardrop_pins";
     create_directory(out_dir);
 
     float time_end = 3.0;
