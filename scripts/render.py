@@ -13,7 +13,7 @@ time = []
 res_x = 802
 res_y = 1282
 
-pin_type = "half_teardrop"   # others are teardrop_half and cylinder
+# pin_type = "half_teardrop"   # others are teardrop_half and cylinder
 
 
 
@@ -21,9 +21,15 @@ pin_type = "half_teardrop"   # others are teardrop_half and cylinder
 clump_radius = {'0000': 0.0212, '0001':0.02, '0002':0.0178, '0003':0.0125, '0004': 0.025 }
 
 print(sys.argv)
-if len(sys.argv) != 5:
-    print("usage ./blender --python --background animation_script_batch start_frame")
+if len(sys.argv) != 6:
+    print("usage ./blender --python --background animation_script_batch start_frame pin_type [0 half 1 full]")
     sys.exit(1)
+
+
+if sys.argv[5] == "0":
+    pin_type = "half_teardrop"
+elif sys.argv[5] == "1":
+    pin_type = "full_teardrop"
 
 #============ specify the directory of csv, obj, image, and such
 # data_sim = "/srv/home/fang/phX/build_DEM/bin/DemoOutput_phx_periodic_8mm_orifice_2000fps/"
