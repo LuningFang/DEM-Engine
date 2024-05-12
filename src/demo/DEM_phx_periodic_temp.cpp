@@ -62,20 +62,34 @@ int main(int argc, char* argv[]) {
     double init_temp_sand = 348.f;
 
     // input parameters
-    PinType pin_type = PinType::FULL_TEARDROP;
+    // check number of input parameters
+    if (argc != 2) {
+        std::cout << "Usage: DEM_phx_periodic_temp <pin_type>" << std::endl;
+        return 1;
+    }
+
+    // get pin type from input parameters
+    int pin_type_int = std::stoi(argv[1]);
+    PinType pin_type = static_cast<PinType>(std::stoi(argv[1]));
+
+//    PinType pin_type = PinType::FULL_TEARDROP;
     std::string input_particle_positions;
 
     switch (pin_type){
         case PinType::CYLINDER:
             input_particle_positions = "../../input_particle_positions/cylinder_pins_particles_settled.csv";
+            std::cout << "Pin type: cylinder" << std::endl;
             break;
 
         case PinType::HALF_TEARDROP:
             input_particle_positions = "../../input_particle_positions/teardrop_half_particles_settled.csv";
+            std::cout << "Pin type: half teardrop" << std::endl;
             break;
 
         case PinType::FULL_TEARDROP:
             input_particle_positions = "../../input_particle_positions/teardrop_full_particles_settled.csv";
+            std::cout << "Pin type: full teardrop" << std::endl;
+
             break;
 
         default:
@@ -281,9 +295,19 @@ int main(int argc, char* argv[]) {
 
     path out_dir = current_path();
 
-    out_dir += "/phx_periodic_teardrop";
-
-    create_directory(out_dir);
+    switch (pin_type){
+        case PinType::CYLINDER:
+            out_dir += "/phx_periodic_temp_cylinder";
+            break;
+        case PinType::HALF_TEARDROP:
+            out_dir += "/phx_periodic_temp_half_teardrop";
+            break;
+        case PinType::FULL_TEARDROP:
+            out_dir += "/phx_periodic_temp_full_teardrop";
+            break;
+        default:
+            break;
+    }
 
     // add the coefficient of restitution to the output directory, use argv[1] as the folder name
     create_directory(out_dir);
