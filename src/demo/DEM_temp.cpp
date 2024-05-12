@@ -262,8 +262,6 @@ int main() {
             double avg = sum / Temp_values_rod.size();
             std::cout << "Average temp value: " << avg << std::endl;
 
-
-
         }
 
         // Means advance simulation by one time step
