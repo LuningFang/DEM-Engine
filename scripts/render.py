@@ -13,17 +13,30 @@ time = []
 res_x = 802
 res_y = 1282
 
+# pin_type = "half_teardrop"   # others are teardrop_half and cylinder
+
+
+
 # look up table for clump type and corresponding radius
 clump_radius = {'0000': 0.0212, '0001':0.02, '0002':0.0178, '0003':0.0125, '0004': 0.025 }
 
 print(sys.argv)
-if len(sys.argv) != 5:
-    print("usage ./blender --python --background animation_script_batch start_frame")
+if len(sys.argv) != 6:
+    print("usage ./blender --python --background animation_script_batch start_frame pin_type [0 half 1 full]")
     sys.exit(1)
 
-#============ specify the directory of csv, obj, image, and such
-data_sim = "/srv/home/fang/phX/build_DEM/bin/DemoOutput_phx_periodic_8mm_orifice_4type_fric_0.16/"
 
+if sys.argv[5] == "0":
+    pin_type = "half_teardrop"
+elif sys.argv[5] == "1":
+    pin_type = "full_teardrop"
+elif sys.argv[5] == "2":
+    pin_type = "cylinder_bld"
+
+#============ specify the directory of csv, obj, image, and such
+# data_sim = "/srv/home/fang/phX/build_DEM/bin/DemoOutput_phx_periodic_8mm_orifice_2000fps/"
+
+data_sim = "C:/Users/fang/Documents/phx/dem_results/" + pin_type + "/"
 #data_sim = "C:/Users/fang/Documents/phx/dem_results/8mm_2000fps/"
 image_dir = data_sim + "image/"
 
@@ -81,8 +94,8 @@ print(dis)
 #============================ Start the loop
 #===========================================
 jobid = int(sys.argv[4])
-start_frame = jobid * 100
-end_frame = start_frame + 100
+start_frame = jobid * 50
+end_frame = start_frame + 50
 for i in range(start_frame, end_frame, 1):
     #===========================================
     #======== check if the png file exits or not
@@ -97,7 +110,9 @@ for i in range(start_frame, end_frame, 1):
     scene = bpy.context.scene
     scene.objects.keys()
 
-    file_loc = "cylinder_bld.obj"
+    # file_loc = "cylinder_bld.obj"
+    file_loc = pin_type + ".obj"
+
     obj_name = "cylinder"
     obj_name_spe = "cylinder"
 
@@ -215,6 +230,35 @@ for i in range(start_frame, end_frame, 1):
     bpy.context.scene.frame_current = 2
     bpy.context.view_layer.update()
 
+    # add text that describes the frame number
+    bpy.ops.object.text_add(enter_editmode=False, align='WORLD', location=(-0.1, -16, 0.255))
+    text_material = bpy.data.materials.new(name="TextMaterial")
+
+    # Step 2: Set material properties
+    text_material.use_nodes = True  # Enable use of shader nodes
+    bsdf = text_material.node_tree.nodes.get('Principled BSDF')
+    if bsdf:
+        bsdf.inputs['Base Color'].default_value = (0, 0, 1, 1)  # RGB values for black, 1 is the alpha value
+    for node in text_material.node_tree.nodes:
+        if node.type == 'OUTPUT_MATERIAL':
+            node.inputs['Surface'].hide = True  # Hide the connection to 'Surface' output to disable shadow casting
+
+    # bpy.context.object.data.body = "Time: " + str(i * 0.5e-3 + 9)
+    # format the text time to four digits after the decimal point
+    bpy.context.object.data.materials.append(text_material)
+    bpy.context.object.data.body = "Time: " + "{:.4f}".format(i * 0.5e-3 + 9) + " s"
+
+    bpy.context.object.data.size = 0.2
+    bpy.context.object.data.align_x = 'CENTER'
+    bpy.context.object.data.align_y = 'CENTER'    
+
+
+    # Inside your loop, after creating the text object
+    # Step 1: Create a material
+
+
+
+
     #===========================================
     #========================= Rendering setting
     #===========================================
@@ -275,7 +319,7 @@ for i in range(start_frame, end_frame, 1):
     bpy.context.scene.render.engine = 'CYCLES'
     bpy.context.scene.cycles.device = 'GPU'
     bpy.context.scene.render.resolution_percentage = 100
-    bpy.context.scene.cycles.samples = 256
+    bpy.context.scene.cycles.samples = 100
     bpy.context.scene.render.resolution_x = res_x
     bpy.context.scene.render.resolution_y = res_y
     # filename padded with zero
