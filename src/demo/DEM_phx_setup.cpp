@@ -115,6 +115,9 @@ std::vector<float3> PopulateParticlePositions(float spacing,
 
 int main() {
 
+
+    // check number of inputs
+
     double bxDim = 5.0;
     double byDim = 48.0;
     double bzDim = 0.5;
@@ -128,8 +131,10 @@ int main() {
     // If you don't need individual force information, then this option makes the solver run a bit faster.
     DEMSim.SetNoForceRecord();
 
-    auto mat_type_sand = DEMSim.LoadMaterial({{"E", 1e9}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.5}, {"Crr", 0.01}});
-    auto mat_type_drum = DEMSim.LoadMaterial({{"E", 2e9}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.5}, {"Crr", 0.01}});
+    float fric_coef = 0.0;
+
+    auto mat_type_sand = DEMSim.LoadMaterial({{"E", 1e9}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
+    auto mat_type_drum = DEMSim.LoadMaterial({{"E", 2e9}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
 
 
     DEMSim.InstructBoxDomainDimension({-bxDim / 2., bxDim / 2.}, 
@@ -145,7 +150,7 @@ int main() {
 
     // Since two types of materials have the same mu, this following call does not change the default mu for their
     // interaction, it's still 0.5.
-    DEMSim.SetMaterialPropertyPair("mu", mat_type_sand, mat_type_drum, 0.5);
+    DEMSim.SetMaterialPropertyPair("mu", mat_type_sand, mat_type_drum, fric_coef);
 
     // Create some random clump templates for the filling materials
     // An array to store these generated clump templates
@@ -154,6 +159,8 @@ int main() {
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
 
     double radius_array[4] = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling, 0.125 * scaling};
+
+    // double radius_array[3] = {0.178 * scaling, 0.125 * scaling, 0.1 * scaling};
 
     // ratio, 20%, 50%, 30%
     double mass;
@@ -216,7 +223,7 @@ int main() {
     DEMSim.Initialize();
 
     path out_dir = current_path();
-    out_dir += "/DemoOutput_phx_mixture";
+    out_dir += "/phx_frictionless";
     create_directory(out_dir);
 
     float time_end = 3.0;
@@ -244,20 +251,15 @@ int main() {
     }
 
     char cp_filename[200];
-    sprintf(cp_filename, "%s/more_particles_settled_3e5.csv", out_dir.c_str());
+    sprintf(cp_filename, "%s/frictionless_cylinder.csv", out_dir.c_str());
     DEMSim.WriteClumpFile(std::string(cp_filename));
 
     DEMSim.ShowThreadCollaborationStats();
     DEMSim.ClearThreadCollaborationStats();
 
-    char cnt_filename[200];
-    sprintf(cnt_filename, "%s/Contact_pairs_3e5.csv", out_dir.c_str());
-    DEMSim.WriteContactFile(std::string(cnt_filename));
-
-
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> time_sec = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-    std::cout << (time_sec.count()) / time_end * 10.0 << " seconds (wall time) to finish 10 seconds' simulation"
+    std::cout << (time_sec.count())  << " seconds (wall time) to finish " << time_end << " seconds simulation"
               << std::endl;
     DEMSim.ShowThreadCollaborationStats();
     DEMSim.ClearThreadCollaborationStats();
@@ -265,6 +267,5 @@ int main() {
     DEMSim.ShowTimingStats();
     DEMSim.ShowAnomalies();
 
-    std::cout << "DEMdemo_Centrifuge exiting..." << std::endl;
     return 0;
 }
