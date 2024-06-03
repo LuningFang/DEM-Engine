@@ -48,6 +48,7 @@ SET(DEMOS
 		DEM_phx_mesh_pins
 		DEM_temp
 		DEM_phx_periodic_cyl
+		DEM_phx_temp_runs
 )
 
 # ------------------------------------------------------------------------------
