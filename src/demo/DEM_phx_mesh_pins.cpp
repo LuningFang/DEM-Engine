@@ -113,7 +113,14 @@ std::vector<float3> PopulateParticlePositions(float spacing,
 }
 
 
-int main() {
+int main( int argc, char* argv[]) {
+
+    if (argc != 2) {
+        std::cout << "Usage: DEM_phx_mesh_pins <Run nuDmber>" << std::endl;
+        return 1;
+    }
+
+    int run_number = std::stoi(argv[1]);
 
     double bxDim = 5.0;
     double byDim = 48.0;
@@ -168,19 +175,19 @@ int main() {
 
     // Add the cylinder pins
     float3 CylAxis = make_float3(0, 0, 1);
-    float pin_dim_y = 0.9;
+    float pin_dim_y = 10.5;
 
     // read pin center from data file in data/sim_data/pin_pos.csv, skip the first header row, and assemble the value into a list of float3
-    std::vector<float3> pin_centers = ReadPinPositions("sim_data/pin_pos.csv");
+    std::string pin_pos_filename = "sim_data/pin_pos_run" + std::to_string(run_number) + ".csv";    
+    std::vector<float3> pin_centers = ReadPinPositions(pin_pos_filename);
     std::cout << "number of pins: " << pin_centers.size() << std::endl;
 
     for (auto pin_center : pin_centers) {
-        auto pin = DEMSim.AddWavefrontMeshObject("../data/mesh/full_teardrop.obj", mat_type_drum);
+        std::string pin_obj_name = "../data/mesh/tear_drop_run" + std::to_string(run_number) + ".obj";
+        auto pin = DEMSim.AddWavefrontMeshObject(pin_obj_name, mat_type_drum);
         float4 rot = make_float4(1, 0, 0, 0);
         pin->Move(pin_center, rot);
         pin->SetFamily(10);
-
-
         std::cout << "added pin at " << pin_center.x << ", " << pin_center.y << ", " << pin_center.z << std::endl;
     }
     DEMSim.SetFamilyFixed(10);
@@ -208,7 +215,7 @@ int main() {
     auto max_v_finder = DEMSim.CreateInspector("clump_max_absv");
     float max_v;
 
-    float step_size = 2e-6;
+    float step_size = 5e-6;
     DEMSim.SetInitTimeStep(step_size);
     DEMSim.SetGravitationalAcceleration(make_float3(0, -981, 0));
     DEMSim.SetExpandSafetyType("auto");
@@ -220,11 +227,11 @@ int main() {
     DEMSim.Initialize();
 
     path out_dir = current_path();
-    out_dir += "/DemoOutput_phx_full_teardrop_pins";
+    out_dir += "/DemoOutput_phx_teardrop_run" + std::to_string(run_number);
     create_directory(out_dir);
 
-    float time_end = 3.0;
-    unsigned int fps = 20;
+    float time_end = 1.6;
+    unsigned int fps = 10;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
 
     std::cout << "Output at " << fps << " FPS" << std::endl;
