@@ -185,7 +185,7 @@ int main( int argc, char* argv[]) {
     for (auto pin_center : pin_centers) {
         std::string pin_obj_name = "../data/mesh/tear_drop_run" + std::to_string(run_number) + ".obj";
         auto pin = DEMSim.AddWavefrontMeshObject(pin_obj_name, mat_type_drum);
-        float4 rot = make_float4(1, 0, 0, 0);
+        float4 rot = make_float4(0, 0, 0, 1);
         pin->Move(pin_center, rot);
         pin->SetFamily(10);
         std::cout << "added pin at " << pin_center.x << ", " << pin_center.y << ", " << pin_center.z << std::endl;
