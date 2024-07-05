@@ -276,7 +276,7 @@ int main(int argc, char* argv[]) {
 
     path out_dir = current_path();
 
-    out_dir += "/phx_periodic_teardrop";
+    out_dir += "/phx_cylinder_one_hole";
 
     create_directory(out_dir);
 
