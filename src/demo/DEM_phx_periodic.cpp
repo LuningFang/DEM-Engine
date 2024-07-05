@@ -4,10 +4,7 @@
 //	SPDX-License-Identifier: BSD-3-Clause
 
 // =============================================================================
-// This demo features an analytical boundary-represented fast rotating container
-// with particles of various shapes pulled into it. Different types of particles
-// are marked with different family numbers (identification numbers) for easier
-// visualizations.
+// 
 // =============================================================================
 
 #include <core/ApiVersion.h>
@@ -92,8 +89,6 @@ int main(int argc, char* argv[]) {
     int plate_family = 2;
     int sand_family = 0;
     int recylcled_family = 1;
-
-    bool use_periodic = true;
 
     DEMSolver DEMSim;
     DEMSim.SetOutputFormat(OUTPUT_FORMAT::CSV);
@@ -258,15 +253,10 @@ int main(int argc, char* argv[]) {
     DEMSim.DisableContactBetweenFamilies(plate_family, plate_family);
 
     // prescribe motion
-    if (use_periodic == true){
-        DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+26", "none");
-        DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
-    }
+    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+26", "none");
+    DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
 
 ////////////////////////////////////////////////////
-
-
-
 
     // Keep tab of the max velocity in simulation
     auto max_v_finder = DEMSim.CreateInspector("clump_max_absv");
@@ -286,11 +276,7 @@ int main(int argc, char* argv[]) {
 
     path out_dir = current_path();
 
-    if (use_periodic == true){
-        out_dir += "/phx_periodic_teardrop";
-    } else {
-        out_dir += "/DemoOutput_teardrop_discharge";
-    }
+    out_dir += "/phx_periodic_teardrop";
 
     create_directory(out_dir);
 
@@ -323,32 +309,30 @@ int main(int argc, char* argv[]) {
             std::cout << "Max velocity of any point in simulation is " << max_v << std::endl;
 
             //////////////////periodic boundary
-            if (use_periodic == true){
-                int num_changed = DEMSim.ChangeClumpFamily(recylcled_family, plate_x_range, plate_y_range, plate_z_range);
-                std::cout << "number of family changed: " << num_changed << std::endl;
-                DEMSim.DoDynamicsThenSync(0.);
-            }
+            int num_changed = DEMSim.ChangeClumpFamily(recylcled_family, plate_x_range, plate_y_range, plate_z_range);
+            std::cout << "number of family changed: " << num_changed << std::endl;
+            DEMSim.DoDynamicsThenSync(0.);
 
             std::cout << "Frame: " << currframe << std::endl;
             std::cout << "Time: " << t << std::endl;
-        }
 
-        // only write the last second of data
-        if (curr_step % write_out_steps == 0 && t >= (double) time_end - 1 ){
             char filename[200];
             sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
             DEMSim.WriteSphereFile(std::string(filename));
             std::cout << "write file: " << filename << std::endl;
             csv_frame++;
         }
-
-
-
+        // only write the last second of data
+        // if (curr_step % write_out_steps == 0 && t >= (double) time_end - 1 ){
+        //     char filename[200];
+        //     sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
+        //     DEMSim.WriteSphereFile(std::string(filename));
+        //     std::cout << "write file: " << filename << std::endl;
+        //     csv_frame++;
+        // }
         DEMSim.DoDynamics(step_size);
-        if (use_periodic == true && curr_step % out_steps == 0){
-            DEMSim.ChangeFamily(recylcled_family, sand_family);
-            DEMSim.DoDynamicsThenSync(0.);
-        }
+        DEMSim.ChangeFamily(recylcled_family, sand_family);
+        DEMSim.DoDynamicsThenSync(0.);
     }
 
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
