@@ -4,10 +4,7 @@
 //	SPDX-License-Identifier: BSD-3-Clause
 
 // =============================================================================
-// This demo features an analytical boundary-represented fast rotating container
-// with particles of various shapes pulled into it. Different types of particles
-// are marked with different family numbers (identification numbers) for easier
-// visualizations.
+// 
 // =============================================================================
 
 #include <core/ApiVersion.h>
@@ -92,8 +89,6 @@ int main(int argc, char* argv[]) {
     int plate_family = 2;
     int sand_family = 0;
     int recylcled_family = 1;
-
-    bool use_periodic = true;
 
     DEMSolver DEMSim;
     DEMSim.SetOutputFormat(OUTPUT_FORMAT::CSV);
@@ -228,7 +223,7 @@ int main(int argc, char* argv[]) {
 
     // Read plate particles from data file in data/sim_data/plate_pos.csv, skip the first header row, and assemble the value into a list of float3
     std::vector<float3> plate_particles;
-    std::ifstream plate_pos_file(GetDEMEDataFile("clumps/bottom_plate_8mm.csv"));
+    std::ifstream plate_pos_file(GetDEMEDataFile("clumps/bottom_plate_25mm_one_hole.csv"));
     // file has 4 columns, x, y, z, and r, and the first row is the header
     // we only need the first 3 columns for the position
     std::string line;
@@ -258,15 +253,10 @@ int main(int argc, char* argv[]) {
     DEMSim.DisableContactBetweenFamilies(plate_family, plate_family);
 
     // prescribe motion
-    if (use_periodic == true){
-        DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+26", "none");
-        DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
-    }
+    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+26", "none");
+    DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
 
 ////////////////////////////////////////////////////
-
-
-
 
     // Keep tab of the max velocity in simulation
     auto max_v_finder = DEMSim.CreateInspector("clump_max_absv");
@@ -286,11 +276,7 @@ int main(int argc, char* argv[]) {
 
     path out_dir = current_path();
 
-    if (use_periodic == true){
-        out_dir += "/phx_periodic_teardrop";
-    } else {
-        out_dir += "/DemoOutput_teardrop_discharge";
-    }
+    out_dir += "/phx_periodic_teardrop";
 
     create_directory(out_dir);
 
@@ -322,50 +308,32 @@ int main(int argc, char* argv[]) {
             max_v = max_v_finder->GetValue();
             std::cout << "Max velocity of any point in simulation is " << max_v << std::endl;
 
-
             //////////////////periodic boundary
-            if (use_periodic == true){
-                int num_changed = DEMSim.ChangeClumpFamily(recylcled_family, plate_x_range, plate_y_range, plate_z_range);
-                std::cout << "number of family changed: " << num_changed << std::endl;
-                DEMSim.DoDynamicsThenSync(0.);
-            }
-
+            int num_changed = DEMSim.ChangeClumpFamily(recylcled_family, plate_x_range, plate_y_range, plate_z_range);
+            std::cout << "number of family changed: " << num_changed << std::endl;
+            DEMSim.DoDynamicsThenSync(0.);
 
             std::cout << "Frame: " << currframe << std::endl;
             std::cout << "Time: " << t << std::endl;
 
-
-        }
-
-        // only write the last second of data
-        if (curr_step % write_out_steps == 0 && t >= (double) time_end - 1 ){
             char filename[200];
             sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
             DEMSim.WriteSphereFile(std::string(filename));
             std::cout << "write file: " << filename << std::endl;
             csv_frame++;
         }
-
-
-
+        // only write the last second of data
+        // if (curr_step % write_out_steps == 0 && t >= (double) time_end - 1 ){
+        //     char filename[200];
+        //     sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
+        //     DEMSim.WriteSphereFile(std::string(filename));
+        //     std::cout << "write file: " << filename << std::endl;
+        //     csv_frame++;
+        // }
         DEMSim.DoDynamics(step_size);
-        if (use_periodic == true && curr_step % out_steps == 0){
-            DEMSim.ChangeFamily(recylcled_family, sand_family);
-            DEMSim.DoDynamicsThenSync(0.);
-        }
+        DEMSim.ChangeFamily(recylcled_family, sand_family);
+        DEMSim.DoDynamicsThenSync(0.);
     }
-
-    char cp_filename[200];
-    sprintf(cp_filename, "%s/GRC_3e5.csv", out_dir.c_str());
-    DEMSim.WriteClumpFile(std::string(cp_filename));
-
-    DEMSim.ShowThreadCollaborationStats();
-    DEMSim.ClearThreadCollaborationStats();
-
-    char cnt_filename[200];
-    sprintf(cnt_filename, "%s/Contact_pairs_3e5.csv", out_dir.c_str());
-    DEMSim.WriteContactFile(std::string(cnt_filename));
-
 
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> time_sec = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
