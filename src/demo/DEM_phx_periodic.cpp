@@ -52,14 +52,7 @@ std::vector<float3> ReadPinPositions(std::string filename) {
 
 int main(int argc, char* argv[]) {
 
-
-    // input parameters
-    if (argc != 2) {
-        std::cout << "Usage: DEM_phx_periodic [cor]" << std::endl;
-        return 1;
-    }
-
-    PinType pin_type = PinType::FULL_TEARDROP;
+    PinType pin_type = PinType::CYLINDER;
     std::string input_particle_positions;
 
     switch (pin_type){
@@ -79,7 +72,7 @@ int main(int argc, char* argv[]) {
             break;
     }
 
-    float coeff_res = std::stof(argv[1]);
+    float coeff_res = 0.6;
 
     double bxDim = 5.0;
     double byDim = 48.0;
@@ -278,10 +271,6 @@ int main(int argc, char* argv[]) {
 
     out_dir += "/phx_cylinder_one_hole";
 
-    create_directory(out_dir);
-
-    // add the coefficient of restitution to the output directory, use argv[1] as the folder name
-    out_dir += "/cor_" + std::string(argv[1]);
     create_directory(out_dir);
 
     float time_end = 10.;
