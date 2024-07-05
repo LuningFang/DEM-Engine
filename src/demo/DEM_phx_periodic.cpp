@@ -228,7 +228,7 @@ int main(int argc, char* argv[]) {
 
     // Read plate particles from data file in data/sim_data/plate_pos.csv, skip the first header row, and assemble the value into a list of float3
     std::vector<float3> plate_particles;
-    std::ifstream plate_pos_file(GetDEMEDataFile("clumps/bottom_plate_8mm.csv"));
+    std::ifstream plate_pos_file(GetDEMEDataFile("clumps/bottom_plate_25mm_one_hole.csv"));
     // file has 4 columns, x, y, z, and r, and the first row is the header
     // we only need the first 3 columns for the position
     std::string line;
@@ -322,7 +322,6 @@ int main(int argc, char* argv[]) {
             max_v = max_v_finder->GetValue();
             std::cout << "Max velocity of any point in simulation is " << max_v << std::endl;
 
-
             //////////////////periodic boundary
             if (use_periodic == true){
                 int num_changed = DEMSim.ChangeClumpFamily(recylcled_family, plate_x_range, plate_y_range, plate_z_range);
@@ -330,11 +329,8 @@ int main(int argc, char* argv[]) {
                 DEMSim.DoDynamicsThenSync(0.);
             }
 
-
             std::cout << "Frame: " << currframe << std::endl;
             std::cout << "Time: " << t << std::endl;
-
-
         }
 
         // only write the last second of data
@@ -354,18 +350,6 @@ int main(int argc, char* argv[]) {
             DEMSim.DoDynamicsThenSync(0.);
         }
     }
-
-    char cp_filename[200];
-    sprintf(cp_filename, "%s/GRC_3e5.csv", out_dir.c_str());
-    DEMSim.WriteClumpFile(std::string(cp_filename));
-
-    DEMSim.ShowThreadCollaborationStats();
-    DEMSim.ClearThreadCollaborationStats();
-
-    char cnt_filename[200];
-    sprintf(cnt_filename, "%s/Contact_pairs_3e5.csv", out_dir.c_str());
-    DEMSim.WriteContactFile(std::string(cnt_filename));
-
 
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> time_sec = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
