@@ -46,6 +46,7 @@ int main(int argc, char** argv) {
     DEMSolver DEMSim;
     DEMSim.SetOutputFormat(OUTPUT_FORMAT::CSV);
     DEMSim.SetOutputContent(OUTPUT_CONTENT::FAMILY);
+    DEMSim.SetErrorOutVelocity(1e7);
     DEMSim.SetNoForceRecord();
 
     float fric_coef = 0.6;
@@ -59,8 +60,8 @@ int main(int argc, char** argv) {
 
     std::string TEST_NAME = "July_Run_" + std::to_string(test_id);
 
-    auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e9}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
-    auto mat_type_wall = DEMSim.LoadMaterial({{"E", 2e9}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
+    auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e8}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
+    auto mat_type_wall = DEMSim.LoadMaterial({{"E", 2e8}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
 
     std::string pin_pos_file = "sim_data/pin_pos_run" + std::to_string(test_id) + ".csv";
     std::vector<float3> pin_centers;
