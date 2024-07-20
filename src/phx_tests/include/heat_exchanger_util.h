@@ -119,7 +119,7 @@ inline std::vector<float3> PopulateParticlePositions(float spacing, float3 dim, 
 
 
 // Add pins to the simulation (analytical circular pins)
-inline void AddCylindricalPins(DEMSolver& DEMSim, std::string pin_pos_filename, float pin_radius, std::shared_ptr<DEMMaterial> mat_type_wall) {
+std::vector<float3> AddCylindricalPins(DEMSolver& DEMSim, std::string pin_pos_filename, float pin_radius, std::shared_ptr<DEMMaterial> mat_type_wall) {
     std::vector<float3> pin_centers = ReadPinPositions(pin_pos_filename);
     std::cout << "number of pins: " << pin_centers.size() << std::endl;
 
@@ -128,6 +128,8 @@ inline void AddCylindricalPins(DEMSolver& DEMSim, std::string pin_pos_filename, 
         pin->AddCylinder(pin_center, make_float3(0,0,1), pin_radius, mat_type_wall, 1); // outward normal
         std::cout << "added cylinder pin at " << pin_center.x << ", " << pin_center.y << ", " << pin_center.z << std::endl;
     }
+
+    return pin_centers;
 }
 
 // Add pins to the simulation (mesh pins)

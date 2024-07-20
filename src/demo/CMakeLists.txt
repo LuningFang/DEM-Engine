@@ -40,15 +40,7 @@ SET(DEMOS
 		DEMdemo_FlexibleMesh
 		DEMdemo_Hopper_Sphere_Cylinder
 		DEMdemo_Fracture_Box
-		DEM_phx_setup
-		DEM_phx_discharge
-		DEM_phx_periodic
-		DEM_phx_periodic_temp
 		DEM_tpms
-		DEM_phx_mesh_pins
-		DEM_temp
-		DEM_phx_periodic_cyl
-		DEM_phx_temp_runs
 )
 
 # ------------------------------------------------------------------------------
