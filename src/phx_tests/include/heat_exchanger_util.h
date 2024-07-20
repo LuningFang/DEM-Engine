@@ -18,12 +18,6 @@
 using namespace deme;
 using namespace std::filesystem;
 
-// enum PinType {
-//     CYLINDER = 0,
-//     HALF_TEARDROP = 1,
-//     FULL_TEARDROP = 2
-// };
-
 // Read pin positions from a file
 inline std::vector<float3> ReadPinPositions(const std::string& filename) {
     std::vector<float3> pin_positions;
@@ -146,4 +140,62 @@ std::vector<float3> AddMeshPins(DEMSolver& DEMSim, std::string pin_pos_filename,
     }
     DEMSim.SetFamilyFixed(family_ID);
     return pin_centers;
+}
+
+void LoadParticlesFromFile(DEMSolver& DEMSim, 
+                           const std::string& filename, std::shared_ptr<DEMMaterial> mat_type,
+                           std::vector<double> radius_array,
+                           float density,
+                           int particle_family
+                           ) {
+    // An array to store clump templates based on radius and density
+    std::vector<std::shared_ptr<DEMClumpTemplate>> clump_types;
+
+    double mass;
+    // Then randomly create some clump templates for filling the drum    
+    for (int i = 0; i < 3; i++) {
+        double volume = 4./3. * PI * std::pow(radius_array[i],3);
+        mass = volume * density;
+        // Load a sphere type
+        clump_types.push_back(DEMSim.LoadSphereType(mass, radius_array[i], mat_type));
+    }
+
+    // load the particles
+    auto clump_xyz = DEMSim.ReadClumpXyzFromCsv(filename);
+    auto clump_quaternion = DEMSim.ReadClumpQuatFromCsv(filename);
+
+    std::vector<float3> in_xyz;
+    std::vector<float4> in_quat;
+    std::vector<std::shared_ptr<DEMClumpTemplate>> in_types;
+    unsigned int t_num = 0;
+    unsigned int sphere_types = radius_array.size();
+    for (int i = 0; i < sphere_types; i++) {
+        char t_name[20];
+        sprintf(t_name, "%04d", t_num);
+
+        auto this_type_xyz = clump_xyz[std::string(t_name)];
+        auto this_type_quat = clump_quaternion[std::string(t_name)];
+
+        size_t n_clump_this_type = this_type_xyz.size();
+        // Prepare clump type identification vector for loading into the system (don't forget type 0 in
+        // ground_particle_templates is the template for rover wheel)
+        std::vector<std::shared_ptr<DEMClumpTemplate>> this_type(n_clump_this_type,
+                                                                 clump_types.at(t_num));
+
+        // Add them to the big long vector
+
+        in_xyz.insert(in_xyz.end(), this_type_xyz.begin(), this_type_xyz.end());
+        in_quat.insert(in_quat.end(), this_type_quat.begin(), this_type_quat.end());
+        in_types.insert(in_types.end(), this_type.begin(), this_type.end());
+
+        // Our template names are 0000, 0001 etc.
+        t_num++;
+    }
+    // Finally, load them into the system
+    DEMClumpBatch base_batch(in_xyz.size());
+    base_batch.SetTypes(in_types);
+    base_batch.SetPos(in_xyz);
+    base_batch.SetOriQ(in_quat);
+    base_batch.SetFamily(particle_family);
+    DEMSim.AddClumps(base_batch);
 }

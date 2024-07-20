@@ -1867,6 +1867,19 @@ void DEMSolver::WriteMeshFile(const std::string& outfilename) const {
     }
 }
 
+
+// get the total mass of all the particles in the specified family
+float DEMSolver::GetFamilyMass(unsigned int familyID) {
+    double total_mass = 0;
+    for (bodyID_t ownerID = 0; ownerID < nOwnerBodies; ownerID++) {
+        if (dT->familyID.at(ownerID) == familyID) {
+            total_mass += GetOwnerMass(ownerID);
+        }
+    }
+    return total_mass;
+}
+
+
 size_t DEMSolver::ChangeClumpFamily(unsigned int fam_num,
                                     const std::pair<double, double>& X,
                                     const std::pair<double, double>& Y,
