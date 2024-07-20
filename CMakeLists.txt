@@ -279,4 +279,5 @@ install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src/kernel/ DESTINATION ${CMAKE_INST
 # Build embedded demos
 # ---------------------------------------------------------------------------- #
 add_subdirectory(src/demo)
+add_subdirectory(src/phx_tests)
 
