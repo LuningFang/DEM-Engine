@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     DEMSim.SetNoForceRecord();
 
     float fric_coef = 0.6;
-    float carbo_density = 3.6e3;
+    float carbo_density = 3.6;
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
     std::vector<double> radius_array = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
 
