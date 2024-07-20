@@ -75,7 +75,7 @@ int main() {
     // Create some random clump templates for the filling materials
     // An array to store these generated clump templates
     std::vector<std::shared_ptr<DEMClumpTemplate>> clump_types;
-    double sand_density = 3.6e3;
+    double sand_density = 3.6; // g/cm^3
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
 
     double radius_array[3] = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};

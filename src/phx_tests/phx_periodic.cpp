@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 
     DEMSim.InstructBoxDomainBoundingBC("all", mat_type_wall);
 
-    double carbo_density = 3.6e3;
+    double carbo_density = 3.6;  // g/cm^3
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
     std::vector<double> radius_array = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
     LoadParticlesFromFile(DEMSim, input_particle_positions, mat_type_carbo, radius_array, carbo_density, sand_family);
@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
             std::cout << "Frame: " << currframe << std::endl;
             std::cout << "Time: " << t << std::endl;
             float recycled_family_mass = DEMSim.GetFamilyMass(recylcled_family);
-            std::cout << "Recycled family mass: " << recycled_family_mass << " g, mass flow rate: " <<  recycled_family_mass / (fps * step_size) << "g / sec"   << std::endl;
+            std::cout << "Recycled family mass: " << recycled_family_mass << " g, mass flow rate: " <<  recycled_family_mass / (1./fps) << "g / sec"   << std::endl;
 
             char filename[200];
             sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
