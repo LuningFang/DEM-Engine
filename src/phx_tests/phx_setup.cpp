@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
     std::vector<double> radius_array = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
 
     float step_size = 5e-6;
-    float time_end = 3.0;
+    float time_end = 2.0;
     unsigned int fps = 10;
 
     std::string TEST_NAME = "July_Run_" + std::to_string(test_id);
@@ -63,8 +63,20 @@ int main(int argc, char** argv) {
     auto mat_type_wall = DEMSim.LoadMaterial({{"E", 2e9}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
 
     std::string pin_pos_file = "sim_data/pin_pos_run" + std::to_string(test_id) + ".csv";
-    std::string pin_mesh_file_name = "mesh/pins/teardrop_run" + std::to_string(test_id) + ".obj";
-    double pin_hdim = 0.45;
+    std::vector<float3> pin_centers;
+    double pin_hdim;
+    // mesh pins
+    if (test_id != 0){
+        std::string pin_mesh_file_name = "mesh/pins/teardrop_run" + std::to_string(test_id) + ".obj";
+        pin_hdim = 0.45;
+        // Add mesh pins
+        std::vector<float3> pin_centers = AddMeshPins(DEMSim, pin_pos_file, pin_mesh_file_name, mat_type_wall);
+    }
+    else {
+        // cylindrical pins
+        pin_hdim = 0.2;
+        AddCylindricalPins(DEMSim, pin_pos_file, pin_hdim, mat_type_wall);
+    }
 
     // Add sim domain
     DEMSim.InstructBoxDomainDimension({-bxDim / 2., bxDim / 2.}, 
@@ -72,8 +84,6 @@ int main(int argc, char** argv) {
                                       {-bzDim / 2., bzDim/  2.});
     DEMSim.InstructBoxDomainBoundingBC("all", mat_type_wall);
 
-    // Add mesh pins
-    std::vector<float3> pin_centers = AddMeshPins(DEMSim, pin_pos_file, pin_mesh_file_name, mat_type_wall);
 
     // Add particles
     AddParticles(DEMSim, radius_array, carbo_density, mat_type_carbo, make_float3(bxDim, byDim, bzDim), pin_centers, pin_hdim);

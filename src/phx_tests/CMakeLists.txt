@@ -16,11 +16,9 @@ SET(LIBRARIES
 SET(PHX_TESTS
 		phx_setup
 		phx_setup_temp
-		phx_discharge
 		phx_periodic
 		phx_periodic_temp
 		tpms
-		phx_mesh_pins
 		temp
 		phx_periodic_cyl
 		phx_temp_runs
