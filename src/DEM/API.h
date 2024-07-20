@@ -431,6 +431,10 @@ class DEMSolver {
     /// @param ownerID The owner's ID.
     /// @return The mass.
     float GetOwnerMass(bodyID_t ownerID) const;
+    /// @brief Get the mass of all particiles in a family.
+    /// @param ownerID The owner's ID.
+    /// @return The mass.
+    float GetFamilyMass(unsigned int familyID);
     /// @brief Get the moment of inertia (in principal axis frame) of a owner.
     /// @param ownerID The owner's ID.
     /// @return The moment of inertia (in principal axis frame).

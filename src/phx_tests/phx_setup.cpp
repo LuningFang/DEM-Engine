@@ -70,12 +70,12 @@ int main(int argc, char** argv) {
         std::string pin_mesh_file_name = "mesh/pins/teardrop_run" + std::to_string(test_id) + ".obj";
         pin_hdim = 0.45;
         // Add mesh pins
-        std::vector<float3> pin_centers = AddMeshPins(DEMSim, pin_pos_file, pin_mesh_file_name, mat_type_wall);
+        pin_centers = AddMeshPins(DEMSim, pin_pos_file, pin_mesh_file_name, mat_type_wall);
     }
     else {
         // cylindrical pins
         pin_hdim = 0.2;
-        AddCylindricalPins(DEMSim, pin_pos_file, pin_hdim, mat_type_wall);
+        pin_centers = AddCylindricalPins(DEMSim, pin_pos_file, pin_hdim, mat_type_wall);
     }
 
     // Add sim domain
