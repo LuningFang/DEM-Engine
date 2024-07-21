@@ -54,14 +54,14 @@ int main(int argc, char** argv) {
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
     std::vector<double> radius_array = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
 
-    float step_size = 1e-6;
+    float step_size = 2e-6;
     float time_end = 2.0;
     unsigned int fps = 10;
 
     std::string TEST_NAME = "July_Run_" + std::to_string(test_id);
 
     auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
-    auto mat_type_wall = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
+    auto mat_type_wall = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
 
     std::string pin_pos_file = "sim_data/pin_pos_run" + std::to_string(test_id) + ".csv";
     std::vector<float3> pin_centers;

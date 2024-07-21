@@ -34,10 +34,9 @@ elif sys.argv[5] == "2":
     pin_type = "cylinder_bld"
 
 #============ specify the directory of csv, obj, image, and such
-# data_sim = "/srv/home/fang/phX/build_DEM/bin/DemoOutput_phx_periodic_8mm_orifice_2000fps/"
+data_sim = "/srv/home/fang/phX/build_DEM/bin/phx_periodic_" + pin_type + "/cor_0.6/"
 
-data_sim = "C:/Users/fang/Documents/phx/dem_results/" + pin_type + "/"
-#data_sim = "C:/Users/fang/Documents/phx/dem_results/8mm_2000fps/"
+#data_sim = "C:/Users/fang/Documents/phx/dem_results/" + pin_type + "/"
 image_dir = data_sim + "image/"
 
 # if image_dir does not exist, create it
