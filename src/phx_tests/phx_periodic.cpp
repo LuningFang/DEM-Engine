@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     AddOrificeParticles(DEMSim, orifice_filename, mat_type_wall, plate_family);
 
     // set up periodic boundary, where particles discharged added to the top
-    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+26", "none");
+    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+28", "none");
     DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
 
     float step_size = 2e-6;
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 
     create_directory(out_dir);
 
-    float time_end = 3.;
+    float time_end = 0.02;
     unsigned int fps = 100;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
     unsigned int csv_frame = 0;
@@ -111,7 +111,10 @@ int main(int argc, char* argv[]) {
 
     for (double t = 0; t < (double)time_end; t += step_size, curr_step++) {
         if (curr_step % out_steps == 0) {
+            DEMSim.ShowThreadCollaborationStats();
             
+            std::chrono::high_resolution_clock::time_point start_step = std::chrono::high_resolution_clock::now();
+
             // change family of particles that are discharged
             int num_changed = DEMSim.ChangeClumpFamily(recylcled_family, plate_x_range, plate_y_range, plate_z_range);
             std::cout << "number of family changed: " << num_changed << std::endl;
@@ -123,10 +126,15 @@ int main(int argc, char* argv[]) {
             std::cout << "Recycled family mass: " << recycled_family_mass << " g, mass flow rate: " <<  recycled_family_mass / (1./fps) << "g / sec"   << std::endl;
 
             char filename[200];
-            sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
+            sprintf(filename, "%s/particles_%04d.csv", out_dir.c_str(), csv_frame);
             DEMSim.WriteSphereFile(std::string(filename));
             std::cout << "write file: " << filename << std::endl;
             csv_frame++;
+            std::chrono::high_resolution_clock::time_point end_step = std::chrono::high_resolution_clock::now();
+
+            std::chrono::duration<double> time_sec = std::chrono::duration_cast<std::chrono::duration<double>>(end_step - start_step);
+            std::cout << "Time for writing and family changing: " << time_sec.count() << " seconds" << std::endl;
+
         }
 
         DEMSim.DoDynamics(step_size);
