@@ -138,8 +138,11 @@ int main(int argc, char* argv[]) {
         }
 
         DEMSim.DoDynamics(step_size);
-        DEMSim.ChangeFamily(recylcled_family, sand_family);
-        DEMSim.DoDynamicsThenSync(0.);
+        if (curr_step % out_steps == 0) {
+            DEMSim.ChangeFamily(recylcled_family, sand_family);
+            DEMSim.DoDynamicsThenSync(0.);
+
+        }
     }
 
     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
