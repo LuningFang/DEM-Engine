@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 
     create_directory(out_dir);
 
-    float time_end = 0.02;
+    float time_end = 4;
     unsigned int fps = 100;
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
     unsigned int csv_frame = 0;
