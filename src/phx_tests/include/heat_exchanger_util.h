@@ -199,3 +199,40 @@ void LoadParticlesFromFile(DEMSolver& DEMSim,
     base_batch.SetFamily(particle_family);
     DEMSim.AddClumps(base_batch);
 }
+
+// Add bottom plate particles as a clump
+void AddOrificeParticles(DEMSolver& DEMSim, 
+                        const std::string& filename, std::shared_ptr<DEMMaterial> mat_type,
+                        int plate_family = 20) {
+
+    std::vector<float3> plate_particles;
+    std::ifstream plate_pos_file(GetDEMEDataFile(filename));
+
+    // we only need the first 3 columns for the position
+    std::string line;
+    std::getline(plate_pos_file, line); // skip the first line
+    while (std::getline(plate_pos_file, line)) {
+        std::istringstream ss(line);
+        std::string token;
+        std::vector<std::string> tokens;
+        while (std::getline(ss, token, ',')) {
+            tokens.push_back(token);
+        }
+        float3 particle_pos = make_float3(std::stof(tokens[0]), std::stof(tokens[1]), std::stof(tokens[2]));
+        plate_particles.push_back(particle_pos);
+    }
+
+    auto plate_template =
+        DEMSim.LoadClumpType(2, make_float3(0.5, 0.5, 0.5),
+                             std::vector<float>(plate_particles.size(), 0.025), plate_particles, mat_type);
+    std::cout << plate_particles.size() << " spheres make up the bottom plate" << std::endl;
+
+    // Add drum
+    auto plate = DEMSim.AddClumps(plate_template, make_float3(0));
+    plate->SetFamilies(plate_family);
+
+    DEMSim.SetFamilyFixed(plate_family);
+    // Disable contacts within drum components
+    DEMSim.DisableContactBetweenFamilies(plate_family, plate_family);
+
+}
