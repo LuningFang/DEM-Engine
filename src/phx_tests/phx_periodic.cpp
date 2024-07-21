@@ -49,8 +49,8 @@ int main(int argc, char* argv[]) {
     DEMSim.SetOutputFormat(OUTPUT_FORMAT::CSV);
     DEMSim.SetOutputContent(OUTPUT_CONTENT::VEL | OUTPUT_CONTENT::FAMILY);
 
-    auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 5e6}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.6}, {"Crr", 0.0}});
-    auto mat_type_wall = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.6}, {"Crr", 0.0}});
+    auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.6}, {"Crr", 0.0}});
+    auto mat_type_wall = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.6}, {"Crr", 0.0}});
 
 
     DEMSim.InstructBoxDomainDimension({-bxDim / 2., bxDim / 2.}, 
@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
     DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+26", "none");
     DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
 
-    float step_size = 2.5e-6;
+    float step_size = 2e-6;
     DEMSim.SetInitTimeStep(step_size);
     DEMSim.SetGravitationalAcceleration(make_float3(0, -981, 0));
     DEMSim.SetExpandSafetyType("auto");

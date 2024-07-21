@@ -230,7 +230,7 @@ void AddOrificeParticles(DEMSolver& DEMSim,
     // Add drum
     auto plate = DEMSim.AddClumps(plate_template, make_float3(0));
     plate->SetFamilies(plate_family);
-
+    // Fix orifice particles
     DEMSim.SetFamilyFixed(plate_family);
     // Disable contacts within drum components
     DEMSim.DisableContactBetweenFamilies(plate_family, plate_family);
