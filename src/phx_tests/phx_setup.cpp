@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     float time_end = 2.0;
     unsigned int fps = 10;
 
-    std::string TEST_NAME = "July_Run_" + std::to_string(test_id);
+    std::string TEST_NAME = "DEBUG_" + std::to_string(test_id);
 
     auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
     auto mat_type_wall = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
@@ -155,7 +155,9 @@ int AddParticles(DEMSolver& DEMSim,
     std::vector<std::shared_ptr<DEMClumpTemplate>> particle_template_type;
     std::vector<float3> particle_xyz;
 
-    // 
+    box_dim.x = box_dim.x/2.;
+    box_dim.y = box_dim.y/8.;
+    box_dim.z = box_dim.z/2.;
     particle_xyz =  PopulateParticlePositions(2.02 * radius_array[0], box_dim, pin_centers, pin_hdim);
     std::cout << "number of particles: " << particle_xyz.size() << std::endl;
 

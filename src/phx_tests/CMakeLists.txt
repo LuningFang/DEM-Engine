@@ -17,11 +17,12 @@ SET(PHX_TESTS
 		phx_setup
 		phx_setup_temp
 		phx_periodic
-		phx_periodic_temp
+		# phx_periodic_temp
 		tpms
 		temp
 		phx_periodic_cyl
-		phx_temp_runs
+		# phx_temp_runs
+		phx_discharge
 )
 
 # ------------------------------------------------------------------------------

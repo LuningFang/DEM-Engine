@@ -142,7 +142,7 @@ std::vector<float3> AddMeshPins(DEMSolver& DEMSim, std::string pin_pos_filename,
     return pin_centers;
 }
 
-void LoadParticlesFromFile(DEMSolver& DEMSim, 
+std::shared_ptr<DEMClumpBatch> LoadParticlesFromFile(DEMSolver& DEMSim, 
                            const std::string& filename, std::shared_ptr<DEMMaterial> mat_type,
                            std::vector<double> radius_array,
                            float density,
@@ -197,11 +197,12 @@ void LoadParticlesFromFile(DEMSolver& DEMSim,
     base_batch.SetPos(in_xyz);
     base_batch.SetOriQ(in_quat);
     base_batch.SetFamily(particle_family);
-    DEMSim.AddClumps(base_batch);
+    auto particles = DEMSim.AddClumps(base_batch);
+    return particles;
 }
 
 // Add bottom plate particles as a clump
-void AddOrificeParticles(DEMSolver& DEMSim, 
+std::shared_ptr<DEMClumpBatch> AddOrificeParticles(DEMSolver& DEMSim, 
                         const std::string& filename, std::shared_ptr<DEMMaterial> mat_type,
                         int plate_family = 20) {
 
@@ -234,5 +235,7 @@ void AddOrificeParticles(DEMSolver& DEMSim,
     DEMSim.SetFamilyFixed(plate_family);
     // Disable contacts within drum components
     DEMSim.DisableContactBetweenFamilies(plate_family, plate_family);
+
+    return plate;
 
 }
