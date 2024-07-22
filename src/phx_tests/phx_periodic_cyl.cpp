@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
     out_dir += "/temperature_2mm/";
     create_directory(out_dir);
 
-    float time_end = 3.;
+    float time_end = 10.;
     unsigned int fps = 100;
     double frame_time = 1./double(fps);
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
@@ -165,23 +165,20 @@ int main(int argc, char* argv[]) {
 
     for (double t = 0; t < (double)time_end; t += step_size, curr_step++) {
         if (curr_step % out_steps == 0) {
-            DEMSim.ShowThreadCollaborationStats();
-            DEMSim.GetOwnerVelocity(100);
+            // DEMSim.ShowThreadCollaborationStats();
             //////////////////periodic boundary
             int num_changed = DEMSim.ChangeClumpFamily(recylcled_family, plate_x_range, plate_y_range, plate_z_range);
-            std::cout << "number of family changed: " << num_changed << std::endl;
             DEMSim.DoDynamicsThenSync(0.);
 
             std::cout << "Frame: " << currframe << std::endl;
             std::cout << "Time: " << t << std::endl;
 
             float recycled_family_mass = DEMSim.GetFamilyMass(recylcled_family);
-            std::cout << "Recycled family mass: " << recycled_family_mass << " g, mass flow rate: " <<  recycled_family_mass / (1./fps) << "g / sec"   << std::endl;
+            std::cout << "mass_flow_rate, " <<  recycled_family_mass / (1./fps)  << std::endl;
 
             char filename[200];
             sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
             DEMSim.WriteSphereFile(std::string(filename));
-            std::cout << "write file: " << filename << std::endl;
             csv_frame++;
         }
 
@@ -196,13 +193,20 @@ int main(int argc, char* argv[]) {
             // get average value in std::vector
 
             std::vector<float> T_values = DEMSim.GetSphereWildcardValue(0, "Temp", num_particles + num_orifice_particles);
+            int counters = 0;
+            double avg_temp_outlet = 0;
             // This is where I'm going to update T based on Q values
             for (int i = 0; i < num_particles; i++) {
                 T_values[i] += Q_values[i] * frame_time / (DEMSim.GetOwnerMass(i) * specific_heat);
 
-                if (T_values[i] < 313 || T_values[i] > 407.85) {
-                    std::cout  << "ERROR!!!!! " << i << " T =  " << T_values[i] << ", Q = " << Q_values[i] << ", pos: " << DEMSim.GetOwnerPosition(i).x << ", " << DEMSim.GetOwnerPosition(i).y << ", " << DEMSim.GetOwnerPosition(i).z << std::endl;                    
+                // if (T_values[i] < 313 || T_values[i] > 407.85) {
+                //     std::cout  << "ERROR!!!!! " << i << " T =  " << T_values[i] << ", Q = " << Q_values[i] << ", pos: " << DEMSim.GetOwnerPosition(i).x << ", " << DEMSim.GetOwnerPosition(i).y << ", " << DEMSim.GetOwnerPosition(i).z << std::endl;                    
+                // }
+                if (std::abs (DEMSim.GetOwnerPosition(i).y + 20) < 0.1)  {
+                    counters ++;
+                    avg_temp_outlet += T_values[i];
                 }
+
                 // if ( i == 68246 || i == 68246) {
                 //     std::cout  << i << " T =  " << T_values[i] << ", Q = " << Q_values[i] << ", pos: " << DEMSim.GetOwnerPosition(i).x << ", " << DEMSim.GetOwnerPosition(i).y << ", " << DEMSim.GetOwnerPosition(i).z << std::endl;                    
                 // }
@@ -210,20 +214,13 @@ int main(int argc, char* argv[]) {
                     T_values[i] = init_temp_sand;                
                 }
             }
+
+            std::cout << "avg_outlet_temp, " << avg_temp_outlet / counters << std::endl;
             DEMSim.SetSphereWildcardValue(0, "Temp", T_values);
             DEMSim.SetSphereWildcardValue(0, "Q", std::vector<float>(num_particles + num_orifice_particles, 0.f));
 
             DEMSim.SetAnalWildcardValue(0, "Temp", std::vector<float>(4 + num_pins, init_temp_cyl));
             DEMSim.SetAnalWildcardValue(0, "Q", std::vector<float>(4 + num_pins, 0.f));
-
-            // compute average temp
-            double avg_temp = 0;
-            for (int i = 0; i < num_particles; i++) {
-                avg_temp += T_values[i];
-            }
-            avg_temp /= num_particles;
-            std::cout << "average temperature: " << avg_temp << std::endl;
-
         }
     }
 
