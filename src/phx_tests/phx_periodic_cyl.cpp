@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
                 // if (T_values[i] < 313 || T_values[i] > 407.85) {
                 //     std::cout  << "ERROR!!!!! " << i << " T =  " << T_values[i] << ", Q = " << Q_values[i] << ", pos: " << DEMSim.GetOwnerPosition(i).x << ", " << DEMSim.GetOwnerPosition(i).y << ", " << DEMSim.GetOwnerPosition(i).z << std::endl;                    
                 // }
-                if (std::abs (DEMSim.GetOwnerPosition(i).y + 20) < 0.1)  {
+                if (std::abs (DEMSim.GetOwnerPosition(i).y + 19) < 0.1)  {
                     counters ++;
                     avg_temp_outlet += T_values[i];
                 }
