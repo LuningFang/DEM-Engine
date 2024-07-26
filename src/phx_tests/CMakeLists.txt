@@ -23,6 +23,7 @@ SET(PHX_TESTS
 		phx_periodic_cyl
 		# phx_temp_runs
 		phx_discharge
+		phx_temp_validation
 )
 
 # ------------------------------------------------------------------------------
