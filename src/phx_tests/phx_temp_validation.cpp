@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
     out_dir += "/temperature_2mm/";
     create_directory(out_dir);
 
-    float time_end = 10.;
+    float time_end = 200.;
     unsigned int fps = 100;
     double frame_time = 1./double(fps);
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
@@ -173,12 +173,14 @@ int main(int argc, char* argv[]) {
             std::cout << "Time: " << t << std::endl;
             float recycled_family_mass = DEMSim.GetFamilyMass(recylcled_family);
             std::cout << "mass_flow_rate, " <<  recycled_family_mass / (1./fps)  << std::endl;
-
-            char filename[200];
-            sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
-            DEMSim.WriteSphereFile(std::string(filename));
-            csv_frame++;
+	    
         }
+	    if (curr_step % (out_steps * 10) == 0) {
+            	char filename[200];
+            	sprintf(filename, "%s/DEM_frame_%05d.csv", out_dir.c_str(), csv_frame);
+            	DEMSim.WriteSphereFile(std::string(filename));
+            	csv_frame++;
+	    }
 
         DEMSim.DoDynamics(step_size);
         if (curr_step % out_steps == 0){
