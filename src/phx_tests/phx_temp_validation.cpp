@@ -35,8 +35,20 @@ int main(int argc, char* argv[]) {
     double init_temp_sand = 40;
 
     std::string out_dir = "July_validation/";
-
     std::string input_particle_positions = out_dir + "settling/settled.csv";
+    std::string out_dir = out_dir + "Test";
+    // create directory
+    std::filesystem::create_directories(out_dir);
+
+    // first and foremost, wrtie the force_model string to a file named temperature_model.txt
+    std::ofstream force_model_file(out_dir + "/temperature_model.txt");
+    // write whatever in force_model() to the file
+    force_model_file << force_model();
+    force_model_file.close();
+
+    // first row is time,mass_flow_rate,avg_outlet_temp
+    std::ofstream info_file(out_dir + "/info.csv");
+    info_file << "time,mass_flow_rate,avg_outlet_temp" << std::endl;
 
     float fric_coeff = 0.6;
     float coeff_res = 0.6;
@@ -144,10 +156,6 @@ int main(int argc, char* argv[]) {
     wall_tracker->SetGeometryWildcardValues("Temp", std::vector<float>(4, init_temp_cyl));
     wall_tracker->SetGeometryWildcardValues("Q", std::vector<float>(4, 0));
 
-
-    out_dir += "/temperature_2mm/";
-    create_directory(out_dir);
-
     float time_end = 10.;
     unsigned int fps = 100;
     double frame_time = 1./double(fps);
@@ -174,6 +182,9 @@ int main(int argc, char* argv[]) {
             float recycled_family_mass = DEMSim.GetFamilyMass(recylcled_family);
             std::cout << "mass_flow_rate, " <<  recycled_family_mass / (1./fps)  << std::endl;
 
+            // write to info.csv
+            info_file << t << "," << recycled_family_mass / (1./fps) << ",";
+
             char filename[200];
             sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
             DEMSim.WriteSphereFile(std::string(filename));
@@ -197,23 +208,17 @@ int main(int argc, char* argv[]) {
             for (int i = 0; i < num_particles; i++) {
                 T_values[i] += Q_values[i] * frame_time / (DEMSim.GetOwnerMass(i) * specific_heat);
 
-                // if (T_values[i] < 313 || T_values[i] > 407.85) {
-                //     std::cout  << "ERROR!!!!! " << i << " T =  " << T_values[i] << ", Q = " << Q_values[i] << ", pos: " << DEMSim.GetOwnerPosition(i).x << ", " << DEMSim.GetOwnerPosition(i).y << ", " << DEMSim.GetOwnerPosition(i).z << std::endl;                    
-                // }
                 if (std::abs (DEMSim.GetOwnerPosition(i).y + 20.5) < 0.1)  {
                     counters ++;
                     avg_temp_outlet += T_values[i];
                 }
-
-                // if ( i == 68246 || i == 68246) {
-                //     std::cout  << i << " T =  " << T_values[i] << ", Q = " << Q_values[i] << ", pos: " << DEMSim.GetOwnerPosition(i).x << ", " << DEMSim.GetOwnerPosition(i).y << ", " << DEMSim.GetOwnerPosition(i).z << std::endl;                    
-                // }
-                if (DEMSim.GetOwnerPosition(i).y > -3 ) {
+                else if (DEMSim.GetOwnerPosition(i).y > -3 ) {
                     T_values[i] = init_temp_sand;                
                 }
             }
 
             std::cout << "avg_outlet_temp, " << avg_temp_outlet / counters << std::endl;
+            info_file << avg_temp_outlet / counters << std::endl;
             DEMSim.SetSphereWildcardValue(0, "Temp", T_values);
             DEMSim.SetSphereWildcardValue(0, "Q", std::vector<float>(num_particles + num_orifice_particles, 0.f));
 
@@ -235,7 +240,6 @@ int main(int argc, char* argv[]) {
     DEMSim.ShowTimingStats();
     DEMSim.ShowAnomalies();
 
-    std::cout << "DEMdemo_Centrifuge exiting..." << std::endl;
     return 0;
 }
 
@@ -348,50 +352,40 @@ if (overlapDepth > 0) {
     int curr_step = (int)(time / ts);
 
     if (curr_step % 5000 == 0) {
+
+        // if one of the body is front wall, side walls or orifice, do not update Q_ij
+        if (AOwnerFamily == 2 || BOwnerFamily == 2 || AGeo == 0 || BGeo == 0 || AGeo == 1 || BGeo == 1 || AGeo == 2 || BGeo == 2) {
+            continue;
+        }
+
         // radius contact
         double radius_eff = (ARadius * BRadius) / (ARadius + BRadius);
-        double E_heat_transfer = E_cnt * 100.f;
+        double E_heat_transfer = E_cnt * 3400.;
         double radius_contact = powf( 2.f * radius_eff / E_heat_transfer * force_mag, 1.0/3.0);
 
-        // temperature
-        double T_j = Temp_B[BGeo];
-        double T_i = Temp_A[AGeo];
-        double Q_ij;
+        // Initialize temperatures
+        double T_i = 0;
+        double T_j = 0;
+        double Q_ij = 0;
 
-        // if AGeo belongs to the heat component, modify temp based on position
         if (AGeo > 3 && AGeo < 39) {
-            // b is the particle
-            // look up position based on particle pos y component             
+            // wall/pin is bodyA, look up temperature of the wall/pin based on particle B position
             T_i = -2.2 * BOwnerPos.y + 107.4;
-        }
+            T_j = Temp_B[BGeo];
+            Q_ij = 4. * ks * radius_contact * (T_j - T_i);
 
-        if (BGeo > 3 && BGeo < 39) {
-            // a is the particle
-            // look up position based on particle pos y component             
+        } else if (BGeo > 3 && BGeo < 39) {
+            // wall/pin is bodyB, look up temperature of the wall/pin based on particle A position
             T_j = -2.2 * AOwnerPos.y + 107.4;
-        }   
+            T_i = Temp_A[AGeo];
+            Q_ij = 4. * ks * radius_contact * (T_j - T_i);
 
+        } else {
+            // Both AGeo and BGeo are particles
+            T_i = Temp_A[AGeo];
+            T_j = Temp_B[BGeo];
+            Q_ij = 2. * ks * radius_contact * (T_j - T_i);
 
-
-        // No heat flux at the orifice 
-        if (AOwnerFamily == 2 || BOwnerFamily == 2){
-            Q_ij = 0;
-        }
-
-        // No heat flux at front and side walls 
-        if (AGeo == 0 || BGeo == 0 || AGeo == 1 || BGeo == 1 || AGeo == 2 || BGeo == 2) {
-            Q_ij = 0;
-        }
-        // Pins and backwall
-        else if (AGeo > 3 && AGeo < 39) {
-            Q_ij = 4. * ks * radius_contact *  (T_j - T_i);
-        }
-        else if (BGeo > 3 && BGeo < 39) {
-            Q_ij = 4. * ks * radius_contact *  (T_j - T_i);
-        }
-        else {
-            // particle - particle contact
-            Q_ij = 2. * ks * radius_contact *  (T_j - T_i);
         }
 
         atomicAdd(Q_A + AGeo,  Q_ij);
@@ -414,14 +408,21 @@ if (overlapDepth > 0) {
     delta_tan_y = 0;
     delta_tan_z = 0;
     
-    }
+}
 
-    // this is where particle fluid particle heat exchange model should be added
+    // particle fluid particle heat transfer model 
+    // Note that this needs to happen all particles within the neighborhood
     int curr_step = (int) (time / ts);
     if (curr_step % 5000 == 0) {
+
+        // if one of the body is front wall, side walls or orifice, do not update Q_ij
+        if (AOwnerFamily == 2 || BOwnerFamily == 2 || AGeo == 0 || BGeo == 0 || AGeo == 1 || BGeo == 1 || AGeo == 2 || BGeo == 2) {
+            continue;
+        }
+
         double distances[11] = {-0.200, -0.160, -0.120, -0.080, -0.040, 0.000, 0.040, 0.080, 0.120, 0.16, 0.200};
         double volumes[11] = {0.150, 0.167, 0.182, 0.197, 0.217, 0.409, 0.077, 0.046, 0.027, 0.012, 0.000};
-
+        int num_pts = 11;
         double interval = 0.04;
         double start_distance = -0.2;
 
@@ -430,46 +431,35 @@ if (overlapDepth > 0) {
         int i = (int) ((ratio - start_distance) / interval);
 
         // Check if the distance is within bounds
-        if (i > 0 && i < 11 - 1) {
+        if (i > 0 && i < num_pts - 1) {
 
             double t = (ratio - distances[i]) / (distances[i + 1] - distances[i]);
             double volume = volumes[i] * (1 - t) + volumes[i + 1] * t;
-            // temperature
-            double T_j = Temp_B[BGeo];
-            double T_i = Temp_A[AGeo];
+
+            // Initialize temperatures
+            double T_i = 0;
+            double T_j = 0;
+            double Q_ij = 0;
 
             if (AGeo > 3 && AGeo < 39) {
-                // b is the particle
-                // look up position based on particle pos y component             
+                // wall/pin is bodyA, look up temperature of the wall/pin based on particle B position
                 T_i = -2.2 * BOwnerPos.y + 107.4;
-            }
+                T_j = Temp_B[BGeo];
+                Q_ij = 2. * ks * volume *  (T_j - T_i) / 1000.;
 
-            if (BGeo > 3 && BGeo < 39) {
-                // a is the particle
-                // look up position based on particle pos y component             
+            } else if (BGeo > 3 && BGeo < 39) {
+                // wall/pin is bodyB, look up temperature of the wall/pin based on particle A position
                 T_j = -2.2 * AOwnerPos.y + 107.4;
-            }   
+                T_i = Temp_A[AGeo];
+                Q_ij = 2. * ks * volume *  (T_j - T_i) / 1000.;
 
+            } else {
+                // Both AGeo and BGeo are particles
+                T_i = Temp_A[AGeo];
+                T_j = Temp_B[BGeo];
+                Q_ij = ks * volume *  (T_j - T_i) / 1000.;
 
-
-            double Q_ij;
-            if (AOwnerFamily == 2 || BOwnerFamily == 2){
-                Q_ij = 0;
             }
-
-            if (AGeo == 0 || BGeo == 0 || AGeo == 1 || BGeo == 1 || AGeo == 2 || BGeo == 2) {
-                Q_ij = 0;
-            }
-            else if (AGeo > 3 && AGeo < 39) {
-                Q_ij = 2. * ks * volume *  (T_j - T_i) / 10.;
-            }
-            else if (BGeo > 3 && BGeo < 39) {
-                Q_ij = 2. * ks * volume *  (T_j - T_i) / 10.;
-            }
-            else {
-                Q_ij = ks * volume *  (T_j - T_i) / 10.;
-            }
-
 
             atomicAdd(Q_A + AGeo,  Q_ij);
             atomicAdd(Q_B + BGeo, -Q_ij);
