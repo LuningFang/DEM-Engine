@@ -26,7 +26,7 @@ using namespace std::filesystem;
 
 
 // Model that describes the temperature of the system
-std::string force_model();
+std::string force_model(double E_real_over_dem = 1.0, double Q_fpf_ratio = 1.0);
 
 int main(int argc, char* argv[]) {
     const float specific_heat = 9e6;
@@ -36,14 +36,27 @@ int main(int argc, char* argv[]) {
 
     std::string out_dir = "July_validation/";
     std::string input_particle_positions = out_dir + "settling/settled.csv";
-    out_dir = out_dir + "Test";
+
+    if (argc != 3){
+        std::cout << "Usage: ./phx_temp_validation <E_real_over_dem> <Q_fpf_ratio>" << std::endl;
+        return 1;
+    }
+
+    double E_real_over_dem = std::stod(argv[1]);
+    double Q_fpf_ratio = std::stod(argv[2]);
+
+    // Append the formatted parameters to out_dir
+    std::ostringstream oss;
+    oss << std::scientific << std::setprecision(1) << "E_" << E_real_over_dem << "_Q_" << Q_fpf_ratio;
+    out_dir += oss.str();
+
     // create directory
     std::filesystem::create_directories(out_dir);
 
     // first and foremost, wrtie the force_model string to a file named temperature_model.txt
     std::ofstream force_model_file(out_dir + "/temperature_model.txt");
     // write whatever in force_model() to the file
-    force_model_file << force_model();
+    force_model_file << force_model(E_real_over_dem, Q_fpf_ratio);
     force_model_file.close();
 
     // first row is time,mass_flow_rate,avg_outlet_temp
@@ -97,7 +110,7 @@ int main(int argc, char* argv[]) {
 
     auto wall_tracker = DEMSim.Track(walls);
 
-    auto my_force_model = DEMSim.DefineContactForceModel(force_model());
+    auto my_force_model = DEMSim.DefineContactForceModel(force_model(E_real_over_dem, Q_fpf_ratio));
 
     // Those following lines are needed. We must let the solver know that those var names are history variable etc.
     my_force_model->SetMustHaveMatProp({"E", "nu", "CoR", "mu", "Crr"});
@@ -186,11 +199,6 @@ int main(int argc, char* argv[]) {
 	    
             // write to info.csv
             info_file << t << "," << recycled_family_mass / (1./fps) << ",";
-
-            char filename[200];
-            sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
-            DEMSim.WriteSphereFile(std::string(filename));
-            csv_frame++;
         }
 	    if (curr_step % (out_steps * 10) == 0) {
             	char filename[200];
@@ -252,7 +260,7 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-std::string force_model() {
+std::string force_model(double E_real_over_dem, double Q_fpf_ratio) {
     std::string model = R"V0G0N(
  /////////////////////////////////////////////////////////////
 // The first part is just the standard full Hertzian--Mindlin
@@ -263,6 +271,8 @@ std::string force_model() {
 // physical contacts emerge.
 float E_cnt, G_cnt, CoR_cnt, mu_cnt, Crr_cnt;
 const float ks = 2e5;
+double E_real_over_dem = )V0G0N" + std::to_string(E_real_over_dem) + R"V0G0N(;
+double Q_fpf_ratio = )V0G0N" + std::to_string(Q_fpf_ratio) + R"V0G0N(;
 
 if (overlapDepth > 0) {
     // Material properties
@@ -360,23 +370,17 @@ if (overlapDepth > 0) {
 
     int curr_step = (int)(time / ts);
 
-    if (curr_step % 5000 == 0) {
-
-        // if one of the body is front wall, side walls or orifice, do not update Q_ij
-        if (AOwnerFamily == 2 || BOwnerFamily == 2 || AGeo == 0 || BGeo == 0 || AGeo == 1 || BGeo == 1 || AGeo == 2 || BGeo == 2) {
-            continue;
-        }
+    if (curr_step % 5000 == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
 
         // radius contact
         double radius_eff = (ARadius * BRadius) / (ARadius + BRadius);
-        double E_heat_transfer = E_cnt * 3400.;
+        double E_heat_transfer = E_cnt * E_real_over_dem;
         double radius_contact = powf( 2.f * radius_eff / E_heat_transfer * force_mag, 1.0/3.0);
 
         // Initialize temperatures
         double T_i = 0;
         double T_j = 0;
         double Q_ij = 0;
-
         if (AGeo > 3 && AGeo < 39) {
             // wall/pin is bodyA, look up temperature of the wall/pin based on particle B position
             T_i = -2.2 * BOwnerPos.y + 107.4;
@@ -396,11 +400,10 @@ if (overlapDepth > 0) {
             Q_ij = 2. * ks * radius_contact * (T_j - T_i);
 
         }
-
         atomicAdd(Q_A + AGeo,  Q_ij);
         atomicAdd(Q_B + BGeo, -Q_ij);
 
-        // if (BGeo == 68246 || AGeo == 68246) {
+        // if (BGeo == 588920 || AGeo == 588920) {
         //     printf("T_j: %f, T_i: %f, Q_ij: %f, radius_contact: %f, force_mag: %f, AGeo: %d, BGeo: %d\n", T_j, T_i, Q_ij, radius_contact, force_mag, AGeo, BGeo);
         // }
 
@@ -422,12 +425,7 @@ if (overlapDepth > 0) {
     // particle fluid particle heat transfer model 
     // Note that this needs to happen all particles within the neighborhood
     int curr_step = (int) (time / ts);
-    if (curr_step % 5000 == 0) {
-
-        // if one of the body is front wall, side walls or orifice, do not update Q_ij
-        if (AOwnerFamily == 2 || BOwnerFamily == 2 || AGeo == 0 || BGeo == 0 || AGeo == 1 || BGeo == 1 || AGeo == 2 || BGeo == 2) {
-            continue;
-        }
+    if (curr_step % 5000 == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
 
         double distances[11] = {-0.200, -0.160, -0.120, -0.080, -0.040, 0.000, 0.040, 0.080, 0.120, 0.16, 0.200};
         double volumes[11] = {0.150, 0.167, 0.182, 0.197, 0.217, 0.409, 0.077, 0.046, 0.027, 0.012, 0.000};
@@ -454,27 +452,27 @@ if (overlapDepth > 0) {
                 // wall/pin is bodyA, look up temperature of the wall/pin based on particle B position
                 T_i = -2.2 * BOwnerPos.y + 107.4;
                 T_j = Temp_B[BGeo];
-                Q_ij = 2. * ks * volume *  (T_j - T_i) / 1000.;
+                Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
 
             } else if (BGeo > 3 && BGeo < 39) {
                 // wall/pin is bodyB, look up temperature of the wall/pin based on particle A position
                 T_j = -2.2 * AOwnerPos.y + 107.4;
                 T_i = Temp_A[AGeo];
-                Q_ij = 2. * ks * volume *  (T_j - T_i) / 1000.;
+                Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
 
             } else {
                 // Both AGeo and BGeo are particles
                 T_i = Temp_A[AGeo];
                 T_j = Temp_B[BGeo];
-                Q_ij = ks * volume *  (T_j - T_i) / 1000.;
+                Q_ij = ks * volume *  (T_j - T_i) * Q_fpf_ratio;
 
             }
 
             atomicAdd(Q_A + AGeo,  Q_ij);
             atomicAdd(Q_B + BGeo, -Q_ij);
 
-            // if (BGeo == 68246 || AGeo == 68246) {
-            //     printf("T_j: %f, T_i: %f, Q_ij: %f, volume: %f, AGeo: %d, BGeo: %d, ratio = %f, i = %d\n", T_j, T_i, Q_ij, volume, AGeo, BGeo, ratio, i);
+            // if (BGeo == 588920 || AGeo == 588920) {
+            //     printf("T_j: %f, T_i: %f, Q_ij: %f, volume: %f, AGeo: %d, BGeo: %d, ratio = %f, i = %d\n", T_j, T_i, Q_ij, volume, AGeo, BGeo, Q_fpf_ratio, i);
             // }
         }
 
