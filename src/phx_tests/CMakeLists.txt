@@ -24,6 +24,7 @@ SET(PHX_TESTS
 		# phx_temp_runs
 		# phx_discharge
 		phx_temp_validation
+		TO_design_setup
 )
 
 # ------------------------------------------------------------------------------
