@@ -44,10 +44,10 @@ int main(int argc, char** argv) {
     std::string TO_design_mesh;
     std::string TEST_NAME;
 
-    if (argv[1] == "0") {
+    if (std::string(argv[1]) == "0") {
         TO_design_mesh = "mesh/TO/uniform.obj";
         TEST_NAME = "TO_uniform";
-    } else if (argv[1] == "1") {
+    } else if (std::string(argv[1]) == "1") {
         TO_design_mesh = "mesh/TO/allConstr.obj";   
         TEST_NAME = "TO_allConstr";
     } else {
