@@ -34,9 +34,27 @@ int main(int argc, char** argv) {
 
     double bxDim = 0.5;
     double byDim = 5.0; // change this to 5 for the actual test 
-    double bzDim = 30;
+    double bzDim = 34;
 
-    std::string TO_design_mesh = "mesh/TO/uniform.obj";
+    if (argc != 2){
+        std::cout << "Usage: ./TO_design_setup <Test ID>" << std::endl;
+        return 1;
+    }
+
+    std::string TO_design_mesh;
+    std::string TEST_NAME;
+
+    if (argv[1] == "0") {
+        TO_design_mesh = "mesh/TO/uniform.obj";
+        TEST_NAME = "TO_uniform";
+    } else if (argv[1] == "1") {
+        TO_design_mesh = "mesh/TO/allConstr.obj";   
+        TEST_NAME = "TO_allConstr";
+    } else {
+        std::cout << "Usage: ./TO_design_setup <Test ID, 0 for uniform and 1 for allConstr>" << std::endl;
+        return 1;
+    }
+
     DEMSolver DEMSim;
     DEMSim.SetOutputFormat(OUTPUT_FORMAT::CSV);
     DEMSim.SetOutputContent(OUTPUT_CONTENT::FAMILY);
@@ -49,13 +67,12 @@ int main(int argc, char** argv) {
     std::vector<double> radius_array = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
 
     float step_size = 2.5e-6;
-    float time_end = 2.0;
+    float time_end = 5.0;
     unsigned int fps = 100;
 
-    std::string TEST_NAME = "TO_unifrom";
+    // extract test name from TO_design_mesh
     auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
     auto mat_type_wall = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
-
 
     auto TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
     std::cout << TO_mesh->GetNumTriangles() << " faces and " << TO_mesh->GetNumNodes() << " vertices" << std::endl;
@@ -105,7 +122,7 @@ int main(int argc, char** argv) {
     // sampler spacing
     PDSampler smapler(2.02 * radius_array[0]);
     float3 sampler_center = make_float3(bxDim/2., byDim/2., -bzDim/2.);
-    float3 sampler_hdim = make_float3(bxDim/2. * 0.95, byDim/2. * 0.95, bzDim/2. * 0.8);
+    float3 sampler_hdim = make_float3(bxDim/2. * 0.95, byDim/2. * 0.95, bzDim/2. * 0.9);
     particle_xyz = smapler.SampleBox(sampler_center, sampler_hdim);
 
     unsigned int num_clumps = particle_xyz.size();
