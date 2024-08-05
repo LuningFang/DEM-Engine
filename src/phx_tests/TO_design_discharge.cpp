@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
     AddOrificeParticles(DEMSim, orifice_filename, mat_type_wall, plate_family);
 
     // set up periodic boundary, where particles discharged added to the top
-    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "none", "Z-19");
+    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "none", "Z-22");
     DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "0", "none");
 
     DEMSim.SetInitTimeStep(step_size);
