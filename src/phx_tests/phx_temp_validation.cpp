@@ -149,8 +149,7 @@ int main(int argc, char* argv[]) {
     // for 2mm orifice, 904 particles
     // int num_orifice_particles = 760; // for 5mm orifice 760 particles
 
-    int num_orifice_particles = GetNumParticlesInFile(orifice_filename) {
-; // for 4mm orifice, 808 particles
+    int num_orifice_particles = GetNumParticlesInFile(orifice_filename);
     // int num_orifice_particles = 616; // for 8mm orifice, 616 particles
 
     std::cout << "number of orifice particles added: " << num_orifice_particles << std::endl;
