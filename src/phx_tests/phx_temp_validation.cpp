@@ -26,28 +26,33 @@ using namespace std::filesystem;
 
 
 // Model that describes the temperature of the system
-std::string force_model(double E_real_over_dem = 1.0, double Q_fpf_ratio = 1.0);
+std::string force_model(double Q_fpf_ratio = 1.0, double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0);
 
 int main(int argc, char* argv[]) {
-    const float specific_heat = 9e6;
-    // convert those to celcius it's confusing ... 
-    double init_temp_cyl = 134.7;
-    double init_temp_sand = 40;
+    const float specific_heat = 7.35e6;
+    double init_temp_sand = 19;
+    double backplate_temp_slope = -1.3823;
+    double backplate_temp_intercept = 80.038;
+    std::string orifice_filename = "clumps/validation_bottom_plate_4mm.csv";
 
-    std::string out_dir = "July_validation/";
+
+    double init_temp_cyl = 134.7;
+    std::string out_dir = "Aug_validation/";
     std::string input_particle_positions = out_dir + "settling/settled.csv";
 
-    if (argc != 3){
-        std::cout << "Usage: ./phx_temp_validation <E_real_over_dem> <Q_fpf_ratio>" << std::endl;
-        return 1;
-    }
+    // if (argc != 3){
+    //     std::cout << "Usage: ./phx_temp_validation <E_real_over_dem> <Q_fpf_ratio>" << std::endl;
+    //     return 1;
+    // }
 
-    double E_real_over_dem = std::stod(argv[1]);
-    double Q_fpf_ratio = std::stod(argv[2]);
+    // double E_real_over_dem = std::stod(argv[1]);
+    // double Q_fpf_ratio = std::stod(argv[2]);
+
+    double Q_fpf_ratio = 0.01;
 
     // Append the formatted parameters to out_dir
     std::ostringstream oss;
-    oss << std::scientific << std::setprecision(1) << "E_" << E_real_over_dem << "_Q_" << Q_fpf_ratio;
+    oss << std::scientific << std::setprecision(1) << "inlet_temp_" << init_temp_sand << "_Q_" << Q_fpf_ratio;
     out_dir += oss.str();
 
     // create directory
@@ -56,7 +61,7 @@ int main(int argc, char* argv[]) {
     // first and foremost, wrtie the force_model string to a file named temperature_model.txt
     std::ofstream force_model_file(out_dir + "/temperature_model.txt");
     // write whatever in force_model() to the file
-    force_model_file << force_model(E_real_over_dem, Q_fpf_ratio);
+    force_model_file << force_model(Q_fpf_ratio, backplate_temp_slope, backplate_temp_intercept);
     force_model_file.close();
 
     // first row is time,mass_flow_rate,avg_outlet_temp
@@ -110,7 +115,7 @@ int main(int argc, char* argv[]) {
 
     auto wall_tracker = DEMSim.Track(walls);
 
-    auto my_force_model = DEMSim.DefineContactForceModel(force_model(E_real_over_dem, Q_fpf_ratio));
+    auto my_force_model = DEMSim.DefineContactForceModel(force_model(Q_fpf_ratio, backplate_temp_slope, backplate_temp_intercept));
 
     // Those following lines are needed. We must let the solver know that those var names are history variable etc.
     my_force_model->SetMustHaveMatProp({"E", "nu", "CoR", "mu", "Crr"});
@@ -139,16 +144,19 @@ int main(int argc, char* argv[]) {
     particles->AddGeometryWildcard("Temp", std::vector<float>(num_particles, init_temp_sand));
 
     ///////////////// Add orifice /////////////////////
-    std::string orifice_filename = "clumps/validation_bottom_plate_2mm.csv";
     auto orifice_particles = AddOrificeParticles(DEMSim, orifice_filename, mat_type_wall, plate_family);
-    int num_orifice_particles = 904; // for 1.5mm orifice 952 particles
+    // int num_orifice_particles = 904; // for 1.5mm orifice 952 particles
     // for 2mm orifice, 904 particles
+    // int num_orifice_particles = 760; // for 5mm orifice 760 particles
 
+    int num_orifice_particles = GetNumParticlesInFile(orifice_filename) {
+; // for 4mm orifice, 808 particles
     // int num_orifice_particles = 616; // for 8mm orifice, 616 particles
 
     std::cout << "number of orifice particles added: " << num_orifice_particles << std::endl;
     orifice_particles->AddGeometryWildcard("Q", std::vector<float>(num_orifice_particles, 0));
     orifice_particles->AddGeometryWildcard("Temp", std::vector<float>(num_orifice_particles, init_temp_sand));
+
 
     // prescribe motion
     DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+22", "none");
@@ -260,7 +268,7 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-std::string force_model(double E_real_over_dem, double Q_fpf_ratio) {
+std::string force_model(double Q_fpf_ratio, double backplate_temp_slope, double backplate_temp_intercept) {
     std::string model = R"V0G0N(
  /////////////////////////////////////////////////////////////
 // The first part is just the standard full Hertzian--Mindlin
@@ -270,8 +278,12 @@ std::string force_model(double E_real_over_dem, double Q_fpf_ratio) {
 // since we added extra contact margin for adding electrostatic forces before
 // physical contacts emerge.
 float E_cnt, G_cnt, CoR_cnt, mu_cnt, Crr_cnt;
-const float ks = 2e5;
-double E_real_over_dem = )V0G0N" + std::to_string(E_real_over_dem) + R"V0G0N(;
+const float ks = 2e5; // conductivity of carbo particles
+double E_real_over_dem = 3.4e3;
+
+
+double backplate_temp_slope = )V0G0N" + std::to_string(backplate_temp_slope) + R"V0G0N(;
+double backplate_temp_intercept = )V0G0N" + std::to_string(backplate_temp_intercept) + R"V0G0N(;
 double Q_fpf_ratio = )V0G0N" + std::to_string(Q_fpf_ratio) + R"V0G0N(;
 
 if (overlapDepth > 0) {
@@ -370,6 +382,8 @@ if (overlapDepth > 0) {
 
     int curr_step = (int)(time / ts);
 
+    // bottom plate owner family is 2, Q = 0 
+    // Geo of front, and side walls are 0, 1, 2, no Q there
     if (curr_step % 5000 == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
 
         // radius contact
@@ -381,31 +395,45 @@ if (overlapDepth > 0) {
         double T_i = 0;
         double T_j = 0;
         double Q_ij = 0;
-        if (AGeo > 3 && AGeo < 39) {
-            // wall/pin is bodyA, look up temperature of the wall/pin based on particle B position
-            T_i = -2.2 * BOwnerPos.y + 107.4;
+
+
+        if (AGeo == 3 && (int)myContactType == 11) {
+            // wall is bodyA, look up temperature of the wall based on particle B position
+            T_i = backplate_temp_slope * BOwnerPos.y + backplate_temp_intercept;
             T_j = Temp_B[BGeo];
             Q_ij = 4. * ks * radius_contact * (T_j - T_i);
-
-        } else if (BGeo > 3 && BGeo < 39) {
-            // wall/pin is bodyB, look up temperature of the wall/pin based on particle A position
-            T_j = -2.2 * AOwnerPos.y + 107.4;
+        } else if (BGeo == 3 && (int)myContactType == 11) {
+            // wall is bodyB, look up temperature of the wall based on particle A position
+            T_j = backplate_temp_slope * AOwnerPos.y + backplate_temp_intercept;
+            T_i = Temp_A[AGeo];
+            Q_ij = 4. * ks * radius_contact * (T_j - T_i);
+        } else if ((int)myContactType == 13 && AOwnerFamily == 0){
+            // sand is bodyA, pin is body B, look up temp of B based on position of A
+            T_j = backplate_temp_slope * AOwnerPos.y + backplate_temp_intercept;
             T_i = Temp_A[AGeo];
             Q_ij = 4. * ks * radius_contact * (T_j - T_i);
 
-        } else {
+        } else if ((int)myContactType == 13 && BOwnerFamily == 0) {
+            // sand is bodyB, pin is body A, look up temp based on position of B
+            T_i = backplate_temp_slope * BOwnerPos.y + backplate_temp_intercept;
+            T_j = Temp_B[BGeo];
+            Q_ij = 4. * ks * radius_contact * (T_j - T_i);
+        }
+
+        else {
             // Both AGeo and BGeo are particles
             T_i = Temp_A[AGeo];
             T_j = Temp_B[BGeo];
             Q_ij = 2. * ks * radius_contact * (T_j - T_i);
 
         }
+        
         atomicAdd(Q_A + AGeo,  Q_ij);
         atomicAdd(Q_B + BGeo, -Q_ij);
 
-        // if (BGeo == 588920 || AGeo == 588920) {
-        //     printf("T_j: %f, T_i: %f, Q_ij: %f, radius_contact: %f, force_mag: %f, AGeo: %d, BGeo: %d\n", T_j, T_i, Q_ij, radius_contact, force_mag, AGeo, BGeo);
-        // }
+        if (T_i < 0 || T_j < 0) {
+            printf("NEGATIVE TEMP! T_j: %f, T_i: %f, Q_ij: %f, radius_contact: %f, force_mag: %f, AGeo: %d, BGeo: %d\n", T_j, T_i, Q_ij, radius_contact, force_mag, AGeo, BGeo);
+        }
 
     }
 
@@ -448,32 +476,47 @@ if (overlapDepth > 0) {
             double T_j = 0;
             double Q_ij = 0;
 
-            if (AGeo > 3 && AGeo < 39) {
-                // wall/pin is bodyA, look up temperature of the wall/pin based on particle B position
-                T_i = -2.2 * BOwnerPos.y + 107.4;
-                T_j = Temp_B[BGeo];
-                Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
+        if (AGeo == 3 && (int)myContactType == 11) {
+            // wall is bodyA, look up temperature of the wall based on particle B position
+            T_i = backplate_temp_slope * BOwnerPos.y + backplate_temp_intercept;
+            T_j = Temp_B[BGeo];
+            Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
 
-            } else if (BGeo > 3 && BGeo < 39) {
-                // wall/pin is bodyB, look up temperature of the wall/pin based on particle A position
-                T_j = -2.2 * AOwnerPos.y + 107.4;
-                T_i = Temp_A[AGeo];
-                Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
+        } else if (BGeo == 3 && (int)myContactType == 11) {
+            // wall is bodyB, look up temperature of the wall based on particle A position
+            T_j = backplate_temp_slope * AOwnerPos.y + backplate_temp_intercept;
+            T_i = Temp_A[AGeo];
+            Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
+        } else if ((int)myContactType == 13 && AOwnerFamily == 0){
+            // sand is bodyA, pin is body B, look up temp of B based on position of A
+            T_j = backplate_temp_slope * AOwnerPos.y + backplate_temp_intercept;
+            T_i = Temp_A[AGeo];
+            Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
 
-            } else {
-                // Both AGeo and BGeo are particles
-                T_i = Temp_A[AGeo];
-                T_j = Temp_B[BGeo];
-                Q_ij = ks * volume *  (T_j - T_i) * Q_fpf_ratio;
+        } else if ((int)myContactType == 13 && BOwnerFamily == 0) {
+            // sand is bodyB, pin is body A, look up temp based on position of B
+            T_i = backplate_temp_slope * BOwnerPos.y + backplate_temp_intercept;
+            T_j = Temp_B[BGeo];
+            Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
+        }
 
-            }
+        else {
+            // Both AGeo and BGeo are particles
+            T_i = Temp_A[AGeo];
+            T_j = Temp_B[BGeo];
+            Q_ij = ks * volume *  (T_j - T_i) * Q_fpf_ratio;
+
+        }
+
 
             atomicAdd(Q_A + AGeo,  Q_ij);
             atomicAdd(Q_B + BGeo, -Q_ij);
 
-            // if (BGeo == 588920 || AGeo == 588920) {
-            //     printf("T_j: %f, T_i: %f, Q_ij: %f, volume: %f, AGeo: %d, BGeo: %d, ratio = %f, i = %d\n", T_j, T_i, Q_ij, volume, AGeo, BGeo, Q_fpf_ratio, i);
-            // }
+            // note, I can't have negative temp, print all info when T is negative
+            if (T_i < 0 || T_j < 0) {
+                printf("T_j: %f, T_i: %f, Q_ij: %f, volume: %f, AGeo: %d, BGeo: %d, ratio = %f, i = %d\n", T_j, T_i, Q_ij, volume, AGeo, BGeo, Q_fpf_ratio, i);
+            }
+
         }
 
     }

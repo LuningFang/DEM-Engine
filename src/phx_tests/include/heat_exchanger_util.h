@@ -239,3 +239,15 @@ std::shared_ptr<DEMClumpBatch> AddOrificeParticles(DEMSolver& DEMSim,
     return plate;
 
 }
+
+// get number of particles in a file (skip first line, essentially number of lines)
+int GetNumParticlesInFile(const std::string& filename) {
+    std::ifstream file(GetDEMEDataFile(filename));
+    std::string line;
+    int num_particles = 0;
+    std::getline(file, line); // skip the first line
+    while (std::getline(file, line)) {
+        num_particles++;
+    }
+    return num_particles;
+}
