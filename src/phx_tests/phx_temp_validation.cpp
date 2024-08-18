@@ -29,11 +29,11 @@ using namespace std::filesystem;
 std::string force_model(double Q_fpf_ratio = 1.0, double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0);
 
 int main(int argc, char* argv[]) {
-    const float specific_heat = 7.35e6;
-    double init_temp_sand = 19;
-    double backplate_temp_slope = -1.3823;
-    double backplate_temp_intercept = 80.038;
-    std::string orifice_filename = "clumps/validation_bottom_plate_4mm.csv";
+    const float specific_heat = 7.917e6;
+    double init_temp_sand = 18.5;
+    double backplate_temp_slope = -3.41;
+    double backplate_temp_intercept = 127.18;
+    std::string orifice_filename = "clumps/validation_bottom_plate_15e-1mm.csv";
 
 
     double init_temp_cyl = 134.7;
