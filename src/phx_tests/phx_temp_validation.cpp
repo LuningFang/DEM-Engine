@@ -25,34 +25,46 @@ using namespace deme;
 using namespace std::filesystem;
 
 
+double init_temp_array[5] = {18.5, 19, 19.3, 21.3, 21.1};
+double backplate_temp_intercept_array[5] = {127.18, 80.038, 81.843, 78.379, 78.413};
+double backplate_temp_slope_array[5] = {-3.4086, -1.3823, -1.1256, -0.9396, -0.7764};
+double specific_heat_array[5] = {7.917e6, 7.353e6, 7.329e6, 7.329e6, 7.32e6};
+std::string orifice_filename_array[5] = {"15e-1mm", "4mm", "6mm", "8mm", "10mm"};
 // Model that describes the temperature of the system
 std::string force_model(double Q_fpf_ratio = 1.0, double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0);
 
 int main(int argc, char* argv[]) {
-    const float specific_heat = 7.917e6;
-    double init_temp_sand = 18.5;
-    double backplate_temp_slope = -3.41;
-    double backplate_temp_intercept = 127.18;
-    std::string orifice_filename = "clumps/validation_bottom_plate_15e-1mm.csv";
+
+    if (argc != 3){
+        std::cout << "Usage: ./phx_temp_validation <TestID 1-5> <Q_fpf_ratio>" << std::endl;
+        return 1;
+    }
+
+    int TestID = std::stoi(argv[1]);
+    double Q_fpf_ratio = std::stod(argv[2]);
+
+    double specific_heat = specific_heat_array[TestID-1];
+    double init_temp_sand = init_temp_array[TestID-1];
+    double backplate_temp_slope = backplate_temp_slope_array[TestID-1];
+    double backplate_temp_intercept = backplate_temp_intercept_array[TestID-1];
+    std::string orifice_filename = "clumps/validation_bottom_plate_" + orifice_filename_array[TestID-1] + ".csv";
+
+
+
+    // const float specific_heat = 7.917e6;
+    // double init_temp_sand = 18.5;
+    // double backplate_temp_slope = -3.41;
+    // double backplate_temp_intercept = 127.18;
+    // std::string orifice_filename = "clumps/validation_bottom_plate_15e-1mm.csv";
 
 
     double init_temp_cyl = 134.7;
     std::string out_dir = "Aug_validation/";
     std::string input_particle_positions = out_dir + "settling/settled.csv";
 
-    // if (argc != 3){
-    //     std::cout << "Usage: ./phx_temp_validation <E_real_over_dem> <Q_fpf_ratio>" << std::endl;
-    //     return 1;
-    // }
-
-    // double E_real_over_dem = std::stod(argv[1]);
-    // double Q_fpf_ratio = std::stod(argv[2]);
-
-    double Q_fpf_ratio = 0.01;
-
     // Append the formatted parameters to out_dir
     std::ostringstream oss;
-    oss << std::scientific << std::setprecision(1) << "inlet_temp_" << init_temp_sand << "_Q_" << Q_fpf_ratio;
+    oss << std::scientific << std::setprecision(1) << "Test_" << TestID << "_Q_" << Q_fpf_ratio;
     out_dir += oss.str();
 
     // create directory
@@ -512,9 +524,9 @@ if (overlapDepth > 0) {
             atomicAdd(Q_B + BGeo, -Q_ij);
 
             // note, I can't have negative temp, print all info when T is negative
-            if (T_i < 0 || T_j < 0) {
-                printf("T_j: %f, T_i: %f, Q_ij: %f, volume: %f, AGeo: %d, BGeo: %d, ratio = %f, i = %d\n", T_j, T_i, Q_ij, volume, AGeo, BGeo, Q_fpf_ratio, i);
-            }
+            // if (T_i < 0 || T_j < 0) {
+            //     printf("T_j: %f, T_i: %f, Q_ij: %f, volume: %f, AGeo: %d, BGeo: %d, ratio = %f, i = %d\n", T_j, T_i, Q_ij, volume, AGeo, BGeo, Q_fpf_ratio, i);
+            // }
 
         }
 
