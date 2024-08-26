@@ -40,6 +40,7 @@ SET(DEMOS
 		DEMdemo_FlexibleMesh
 		DEMdemo_Hopper_Sphere_Cylinder
 		DEMdemo_Fracture_Box
+		SingleWheelTest
 )
 
 # ------------------------------------------------------------------------------
