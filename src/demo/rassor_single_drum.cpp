@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
     int TestID = std::atoi(argv[1]);
 
     std::filesystem::path out_dir = std::filesystem::current_path();
-    out_dir += "/rassor_single_drum_Test" + std::to_string(TestID);
+    out_dir += "/rassor_single_drum_added_weight_Test" + std::to_string(TestID);
     std::filesystem::create_directory(out_dir);
     std::cout << "output directory: " << out_dir << std::endl;
     // `World'
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     float wheel_rad = 0.2;
     float wheel_width = 0.205;
     float wheel_mass = 2.5;
-    float total_pressure = 5. * G_mag;
+    float total_pressure = 7.5 * G_mag;
     float added_pressure = (total_pressure - wheel_mass * G_mag);
     float wheel_IYY = 0.02;
     float wheel_IXX = 0.0058;
@@ -298,7 +298,7 @@ int main(int argc, char* argv[]) {
         std::ofstream file;
         std::string filename = out_dir.string() + "/driving_torque.csv";
         file.open(filename);
-        file << "time,pos_z,driving_torque_global,driving_torque_local\n";
+        file << "time,pos_x,pos_z,driving_torque_local\n";
 
         bool start_measure = false;
         for (double t = 0; t < sim_end; t += step_size, curr_step++) {
@@ -328,7 +328,7 @@ int main(int argc, char* argv[]) {
                 std::cout << "pos_Z: " << pos.z << std::endl;
                 std::cout << "Max system velocity: " << max_v_finder->GetValue() << std::endl;
 
-                file << t << "," << pos.z << "," << drum_torque_glb << "," << drum_torque_loc << "\n";
+                file << t << "," << pos.x << ", " <<  pos.z << "," << drum_torque_loc << "\n";
 
 
             }
