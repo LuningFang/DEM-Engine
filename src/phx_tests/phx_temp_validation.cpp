@@ -59,8 +59,9 @@ int main(int argc, char* argv[]) {
 
 
     double init_temp_cyl = 134.7;
-    std::string out_dir = "Aug_validation/";
-    std::string input_particle_positions = out_dir + "settling/settled.csv";
+    std::string out_dir = "surface_roughness_mu_0.3/";
+    std::filesystem::create_directories(out_dir);
+    std::string input_particle_positions = "Aug_validation/settling/settled.csv";
 
     // Append the formatted parameters to out_dir
     std::ostringstream oss;
@@ -81,6 +82,7 @@ int main(int argc, char* argv[]) {
     info_file << "time,mass_flow_rate,avg_outlet_temp" << std::endl;
 
     float fric_coeff = 0.6;
+    float fric_coeff_pw = 0.3;
     float coeff_res = 0.6;
     double bxDim = 5.0;
     double byDim = 48.0;
@@ -103,7 +105,7 @@ int main(int argc, char* argv[]) {
     DEMSim.SetNoForceRecord();
 
     auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.6}, {"Crr", 0.0}});
-    auto mat_type_wall  = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.6}, {"Crr", 0.0}});
+    auto mat_type_wall  = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coeff_pw}, {"Crr", 0.0}});
 
 
     // DEMSim.InstructBoxDomainDimension({-bxDim / 2., bxDim / 2.},
@@ -190,7 +192,7 @@ int main(int argc, char* argv[]) {
 
 
 
-    float time_end = 200.;
+    float time_end = 20.;
     unsigned int fps = 100;
     double frame_time = 1./double(fps);
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
