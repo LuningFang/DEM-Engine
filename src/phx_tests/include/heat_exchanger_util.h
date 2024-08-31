@@ -206,6 +206,8 @@ std::shared_ptr<DEMClumpBatch> AddOrificeParticles(DEMSolver& DEMSim,
                         const std::string& filename, std::shared_ptr<DEMMaterial> mat_type,
                         int plate_family = 20) {
 
+    double orifice_particle_radius;
+
     std::vector<float3> plate_particles;
     std::ifstream plate_pos_file(GetDEMEDataFile(filename));
 
@@ -221,11 +223,12 @@ std::shared_ptr<DEMClumpBatch> AddOrificeParticles(DEMSolver& DEMSim,
         }
         float3 particle_pos = make_float3(std::stof(tokens[0]), std::stof(tokens[1]), std::stof(tokens[2]));
         plate_particles.push_back(particle_pos);
+        orifice_particle_radius = std::stof(tokens[3]);
     }
 
     auto plate_template =
         DEMSim.LoadClumpType(2, make_float3(0.5, 0.5, 0.5),
-                             std::vector<float>(plate_particles.size(), 0.025), plate_particles, mat_type);
+                             std::vector<float>(plate_particles.size(), orifice_particle_radius), plate_particles, mat_type);
     std::cout << plate_particles.size() << " spheres make up the bottom plate" << std::endl;
 
     // Add drum
