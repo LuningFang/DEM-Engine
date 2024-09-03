@@ -29,7 +29,7 @@ double init_temp_array[5] = {18.5, 19, 19.3, 21.3, 21.1};
 double backplate_temp_intercept_array[5] = {127.18, 80.038, 81.843, 78.379, 78.413};
 double backplate_temp_slope_array[5] = {-3.4086, -1.3823, -1.1256, -0.9396, -0.7764};
 double specific_heat_array[5] = {7.917e6, 7.353e6, 7.329e6, 7.329e6, 7.32e6};
-std::string orifice_filename_array[5] = {"15e-1mm", "4mm", "6mm", "8mm", "10mm"};
+std::string orifice_filename_array[5] = {"175e-2mm", "4mm", "6mm", "8mm", "10mm"};
 // Model that describes the temperature of the system
 std::string force_model(double Q_fpf_ratio = 1.0, double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0);
 
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 
     double init_temp_cyl = 134.7;
     std::string out_dir = "Aug_validation/";
-    std::string input_particle_positions = out_dir + "settling/settled.csv";
+    std::string input_particle_positions = out_dir + "settling/settled_parallel_plates.csv";
 
     // Append the formatted parameters to out_dir
     std::ostringstream oss;
