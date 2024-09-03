@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
 
 
     // prescribe motion
-    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+22", "none");
+    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+25", "none");
     DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
 
     DEMSim.SetInitTimeStep(step_size);
