@@ -49,6 +49,7 @@ int main(int argc, char* argv[]) {
     double backplate_temp_intercept = backplate_temp_intercept_array[TestID-1];
     std::string orifice_filename = "clumps/validation_bottom_plate_" + orifice_filename_array[TestID-1] + ".csv";
 
+    bool initialize_particle_temp = true; // let's initialize temp since this is slow flow 
 
 
     // const float specific_heat = 7.917e6;
@@ -190,6 +191,14 @@ int main(int argc, char* argv[]) {
     wall_tracker->SetGeometryWildcardValues("Temp", std::vector<float>(4, init_temp_cyl));
     wall_tracker->SetGeometryWildcardValues("Q", std::vector<float>(4, 0));
 
+    if (initialize_particle_temp){
+        std::vector<float> T_values = DEMSim.GetSphereWildcardValue(0, "Temp", num_particles + num_orifice_particles);
+        // This is where I'm going to update T based owner position
+        for (int i = 0; i < num_particles; i++) {
+            T_values[i] = init_temp_sand + DEMSim.GetOwnerPosition(i).y * backplate_temp_slope;
+        }
+        DEMSim.SetSphereWildcardValue(0, "Temp", T_values);
+    }
 
 
     float time_end = 20.;
