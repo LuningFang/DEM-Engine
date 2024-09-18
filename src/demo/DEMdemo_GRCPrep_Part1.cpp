@@ -41,8 +41,10 @@ int main() {
     auto mat_type_wheel = DEMSim.LoadMaterial({{"E", 1e9}, {"nu", 0.3}, {"CoR", 0.3}, {"mu", 0.5}});
 
     // Define the simulation world
-    double world_y_size = 0.99;
-    DEMSim.InstructBoxDomainDimension(world_y_size, world_y_size, world_y_size);
+    double world_y_size = 0.2;
+    double world_x_size = 0.4;
+    double world_z_size = 0.5;
+    DEMSim.InstructBoxDomainDimension(world_x_size, world_y_size, world_z_size);
     // Add 5 bounding planes around the simulation world, and leave the top open
     DEMSim.InstructBoxDomainBoundingBC("top_open", mat_type_terrain);
     float bottom = -0.5;
@@ -58,7 +60,13 @@ int main() {
     float mass2 = terrain_density * volume2;
     float3 MOI2 = make_float3(0.57402126, 0.60616378, 0.92890173) * terrain_density;
     // Scale the template we just created
-    std::vector<double> scales = {0.014, 0.0075833, 0.0044, 0.003, 0.002, 0.0018333, 0.0017};
+    //std::vector<double> scales = {0.014, 0.0075833, 0.0044, 0.003, 0.002, 0.0018333, 0.0017};
+    
+    double ratio = 0.25;
+    std::vector<double> scales =  {0.014 * ratio, 0.0075833 * ratio, 0.0044 * ratio , 0.003 * ratio , 0.002 * ratio , 0.0018333 * ratio , 0.0017 * ratio };
+  
+	
+    
     // Then load it to system
     std::shared_ptr<DEMClumpTemplate> my_template2 =
         DEMSim.LoadClumpType(mass2, MOI2, GetDEMEDataFile("clumps/triangular_flat_6comp.csv"), mat_type_terrain);
@@ -119,13 +127,13 @@ int main() {
     float time_end = 10.0;
 
     path out_dir = current_path();
-    out_dir += "/DemoOutput_GRCPrep_Part1";
+    out_dir += "/DemoOutput_GRCPrep_Part1_scaled_down";
     create_directory(out_dir);
     unsigned int currframe = 0;
     unsigned int curr_step = 0;
 
-    float sample_halfheight = 0.4;
-    float sample_halfwidth_x = (world_y_size * 0.96) / 2;
+    float sample_halfheight = 0.2;
+    float sample_halfwidth_x = (world_x_size * 0.96) / 2;
     float sample_halfwidth_y = (world_y_size * 0.96) / 2;
     float offset_z = bottom + sample_halfheight + 0.15;
     float settle_frame_time = 0.2;

@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
     // auto wheel_mesh_file = "/usr/local/share/chrono/data/robot/moonranger/obj/moonranger_wheel.obj";
     // auto clump_file = "/home/moonshot-chrono/sims/DEM-Engine/build_3/DemoOutput_GRCPrep_Part2/GRC_3e6.csv";
     // auto clump_file = "/home/moonshot-chrono/sims/DEM-Engine/build_3/DemoOutput_GRCPrep_Part2/GRC_3e5_Reduced_Footprint.csv";
-    auto clump_file = "GRC_3e5.csv";
+    auto clump_file = "thicker_3e6.csv";
     auto wheel_mesh_file = GetDEMEDataFile("mesh/rover_wheels/moonranger_wheel.obj");
 
     // Simulation Settings
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
     float w_r = 0.2;
     float v_ref = w_r * wheel_radius;
 
-    double sim_end = 45.;
+    double sim_end = 15.;
     // Note: this wheel is not `dictated' by our prescrption of motion because it can still fall onto the ground
     // (move freely linearly)
     DEMSim.SetFamilyPrescribedAngVel(10, "0", to_string_with_precision(w_r), "0", false);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
 
     // Put the wheel in place, then let the wheel sink in initially
     float max_z = max_z_finder->GetValue();
-    wheel_tracker->SetPos(make_float3(-0.25, 0, max_z + 0.03 + wheel_radius));
+    wheel_tracker->SetPos(make_float3(-0.25, 0, max_z + 0.01 + wheel_radius));
     for (double t = 0; t < 0.5; t += frame_time) {
         char filename[200], meshname[200];
         std::cout << "Outputting frame: " << currframe << std::endl;
@@ -287,7 +287,9 @@ void PrepareParticles(DEMSolver &DEMSim, std::shared_ptr<DEMMaterial> mat_type_w
     float mass2 = terrain_density * volume2;
     float3 MOI2 = make_float3(0.57402126, 0.60616378, 0.92890173) * terrain_density;
     // Scale the template we just created
+    //std::vector<double> scales = {0.0014, 0.00075833, 0.00044, 0.0003, 0.0002, 0.00018333, 0.00017};
     std::vector<double> scales = {0.0014, 0.00075833, 0.00044, 0.0003, 0.0002, 0.00018333, 0.00017};
+    
     std::for_each(scales.begin(), scales.end(), [](double &r)
                   { r *= 10.; });
     // Then load it to system
@@ -359,7 +361,7 @@ void PrepareParticles(DEMSolver &DEMSim, std::shared_ptr<DEMMaterial> mat_type_w
     // Now, we don't need all particles loaded, remove ones are not flat
     std::vector<notStupidBool_t> elem_to_remove(in_xyz.size(), 0);
 
-    for (size_t i = 0; i < in_xyz.size(); i++) {
+    /*for (size_t i = 0; i < in_xyz.size(); i++) {
         if (in_xyz.at(i).z > -0.44)
             elem_to_remove.at(i) = 1;
     }
@@ -378,7 +380,7 @@ void PrepareParticles(DEMSolver &DEMSim, std::shared_ptr<DEMMaterial> mat_type_w
                                         return elem_to_remove.at(&i - in_types.data());
                                     }),
                     in_types.end());
-
+    */
     // Finally, load the info into this batch
     DEMClumpBatch base_batch(in_xyz.size());
     base_batch.SetTypes(in_types);
