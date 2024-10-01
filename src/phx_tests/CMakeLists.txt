@@ -28,6 +28,7 @@ SET(PHX_TESTS
 		phx_temp_debug
 		TO_design_setup
 		TO_design_discharge
+		phx_temp_validation_full_teardrop
 )
 
 # ------------------------------------------------------------------------------
