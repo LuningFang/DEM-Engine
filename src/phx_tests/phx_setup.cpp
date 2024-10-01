@@ -6,6 +6,11 @@
 // =============================================================================
 // TODO: at the end of the script, print out stats like bulk density, 
 // =============================================================================
+// Flags:
+// 0 - Cylinder
+// 1 - Half tear drop
+// 2 - Full tear drop
+// 3 and above Run #ID from Michael's data
 
 #include <core/ApiVersion.h>
 #include <core/utils/ThreadManager.h>
@@ -54,11 +59,11 @@ int main(int argc, char** argv) {
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
     std::vector<double> radius_array = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
 
-    float step_size = 2e-6;
+    float step_size = 5e-6;
     float time_end = 2.0;
     unsigned int fps = 10;
 
-    std::string TEST_NAME = "DEBUG_" + std::to_string(test_id);
+    std::string TEST_NAME = "Oct_" + std::to_string(test_id);
 
     auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
     auto mat_type_wall = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
@@ -155,9 +160,6 @@ int AddParticles(DEMSolver& DEMSim,
     std::vector<std::shared_ptr<DEMClumpTemplate>> particle_template_type;
     std::vector<float3> particle_xyz;
 
-    box_dim.x = box_dim.x/2.;
-    box_dim.y = box_dim.y/8.;
-    box_dim.z = box_dim.z/2.;
     particle_xyz =  PopulateParticlePositions(2.02 * radius_array[0], box_dim, pin_centers, pin_hdim);
     std::cout << "number of particles: " << particle_xyz.size() << std::endl;
 
