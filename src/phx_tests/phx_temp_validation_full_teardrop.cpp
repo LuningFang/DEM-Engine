@@ -24,15 +24,9 @@
 using namespace deme;
 using namespace std::filesystem;
 
-
-// double init_temp_array[5] = {18.5, 19, 19.3, 21.3, 21.1};
-// double backplate_temp_intercept_array[5] = {127.18, 80.038, 81.843, 78.379, 78.413};
-// double backplate_temp_slope_array[5] = {-3.4086, -1.3823, -1.1256, -0.9396, -0.7764};
-// double specific_heat_array[5] = {7.917e6, 7.353e6, 7.329e6, 7.329e6, 7.32e6};
-
 double init_temp_array[5] = {20.47, 20.09, 19.96, 19.27, 20.52};
 double backplate_temp_intercept_array[5] = {91.58080936, 79.50573162, 75.22035233, 72.87833029, 72.23564619};
-double backplate_temp_slope_array[5] = {2.016422026, 1.171665815, 0.845657055, 0.526839739, 0.577035373};
+double backplate_temp_slope_array[5] = {-2.016422026, -1.171665815, -0.845657055, -0.526839739, -0.577035373};
 double specific_heat_array[5] = {7.7308e6, 7.4125e6, 7.3463e6, 7.2878e6, 7.3028e6};
 
 
@@ -55,15 +49,6 @@ int main(int argc, char* argv[]) {
     double backplate_temp_slope = backplate_temp_slope_array[TestID-1];
     double backplate_temp_intercept = backplate_temp_intercept_array[TestID-1];
     std::string orifice_filename = "clumps/validation_bottom_plate_" + orifice_filename_array[TestID-1] + ".csv";
-
-
-
-    // const float specific_heat = 7.917e6;
-    // double init_temp_sand = 18.5;
-    // double backplate_temp_slope = -3.41;
-    // double backplate_temp_intercept = 127.18;
-    // std::string orifice_filename = "clumps/validation_bottom_plate_15e-1mm.csv";
-
 
     double init_temp_cyl = 134.7;
     std::string out_dir = "Oct_2/";
@@ -95,8 +80,8 @@ int main(int argc, char* argv[]) {
     float3 CylAxis = make_float3(0, 0, 1);
     float tube_radius = 0.2;
     double carbo_density = 3.6;  // g/cm^3
-    double scaling = 0.2;  // for testing, actual particle scale is 0.1
-    float step_size = 2e-6;  // actual 2e-6
+    double scaling = 0.1;  // for testing, actual particle scale is 0.1
+    float step_size = 5e-6;  // actual 2e-6
 
 
     int plate_family = 2;
@@ -111,11 +96,6 @@ int main(int argc, char* argv[]) {
 
     auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.6}, {"Crr", 0.0}});
     auto mat_type_wall  = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.6}, {"Crr", 0.0}});
-
-
-    // DEMSim.InstructBoxDomainDimension({-bxDim / 2., bxDim / 2.},
-    //                                   {-36.       , byDim},
-    //                                   {-bzDim / 2., bzDim/  2.});
 
     DEMSim.InstructBoxDomainDimension({-bxDim / 2. * 1.1, bxDim / 2. * 1.1},
                                       {-36. * 1.1       , byDim * 1.1},
@@ -205,15 +185,12 @@ int main(int argc, char* argv[]) {
 
 
     int num_pins = pin_centers.size();
-    // pin_tracker->SetGeometryWildcardValues("Temp", std::vector<float>(num_pins, init_temp_cyl));
-    // pin_tracker->SetGeometryWildcardValues("Q", std::vector<float>(num_pins, 0));
-
     wall_tracker->SetGeometryWildcardValues("Temp", std::vector<float>(4, init_temp_cyl));
     wall_tracker->SetGeometryWildcardValues("Q", std::vector<float>(4, 0));
 
 
 
-    float time_end = 200.;
+    float time_end = 20.;
     unsigned int fps = 100;
     double frame_time = 1./double(fps);
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
@@ -233,7 +210,7 @@ int main(int argc, char* argv[]) {
     std::vector<float> T_values = DEMSim.GetSphereWildcardValue(0, "Temp", num_particles + num_orifice_particles);
     // This is where I'm going to update T based owner position
     for (int i = 0; i < num_particles; i++) {
-        T_values[i] = init_temp_sand + DEMSim.GetOwnerPosition(i).y * backplate_temp_slope;
+        T_values[i] = init_temp_sand;
     }
     DEMSim.SetSphereWildcardValue(0, "Temp", T_values);
 
@@ -252,7 +229,7 @@ int main(int argc, char* argv[]) {
             // write to info.csv
             info_file << t << "," << recycled_family_mass / (1./fps) << ",";
         }
-	    if (curr_step % (out_steps) == 0) {
+	    if (curr_step % (out_steps * 10) == 0) {
             	char filename[200];
             	sprintf(filename, "%s/DEM_frame_%05d.csv", out_dir.c_str(), csv_frame);
             	DEMSim.WriteSphereFile(std::string(filename));
@@ -428,7 +405,7 @@ if (overlapDepth > 0) {
 
     // bottom plate owner family is 2, Q = 0 
     // Geo of front, and side walls are 0, 1, 2, no Q there
-    if (curr_step % 5000 == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
+    if (curr_step % 2000 == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
 
         // radius contact
         double radius_eff = (ARadius * BRadius) / (ARadius + BRadius);
