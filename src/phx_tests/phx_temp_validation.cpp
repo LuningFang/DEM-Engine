@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
 
 
     double init_temp_cyl = 134.7;
-    std::string out_dir = "Aug_validation/";
+    std::string out_dir = "surface_roughness_mu_0/";
     std::string input_particle_positions = out_dir + "settling/settled.csv";
 
     // Append the formatted parameters to out_dir
@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
     DEMSim.SetNoForceRecord();
 
     auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.6}, {"Crr", 0.0}});
-    auto mat_type_wall  = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0.6}, {"Crr", 0.0}});
+    auto mat_type_wall  = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", 0}, {"Crr", 0.0}});
 
 
     // DEMSim.InstructBoxDomainDimension({-bxDim / 2., bxDim / 2.},
