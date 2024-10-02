@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
 
 
     double init_temp_cyl = 134.7;
-    std::string out_dir = "surface_roughness_mu_0.3/";
+    std::string out_dir = "surface_roughness_mu_0/";
     std::filesystem::create_directories(out_dir);
     std::string input_particle_positions = "Aug_validation/settling/settled.csv";
 
@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
     info_file << "time,mass_flow_rate,avg_outlet_temp" << std::endl;
 
     float fric_coeff = 0.6;
-    float fric_coeff_pw = 0.3;
+    float fric_coeff_pw = 0;
     float coeff_res = 0.6;
     double bxDim = 5.0;
     double byDim = 48.0;
