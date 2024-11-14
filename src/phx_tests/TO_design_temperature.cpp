@@ -43,7 +43,7 @@ int AddParticles(DEMSolver& DEMSim,
 
 int main(int argc, char** argv) {
 
-    double bxDim = 1.0;
+    double bxDim = 5.0;
     double byDim = 48.0; // change this to 5 for the actual test 
     double bzDim = 0.5;
 
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
     double backplate_temp_intercept = backplate_temp_intercept_array[TestID-1];
     // std::string orifice_filename = "clumps/TO_bottom_plate_" + orifice_filename_array[TestID-1] + ".csv";
 
-    orifice_filename = "clumps/validation_bottom_plate_8mm.csv";
+    orifice_filename = "clumps/validation_bottom_plate_4mm.csv";
 
     double init_temp_cyl = 134.7;
     std::ostringstream oss;
@@ -126,40 +126,25 @@ int main(int argc, char** argv) {
     auto mat_type_wall = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
 
     auto TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
-    int num_tri = TO_mesh->GetNumTriangles();
-    std::cout << num_tri << " faces and " << TO_mesh->GetNumNodes() << " vertices" << std::endl;
+    TO_mesh->Move(make_float3(0,-3,0), make_float4(0, 0, 0, 1));
+    
+    std::cout << TO_mesh->GetNumTriangles() << " faces and " << TO_mesh->GetNumNodes() << " vertices" << std::endl;
+
+    // tile twice to the right
+    TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
+    TO_mesh->Mirror(make_float3(0.5, 0, 0), make_float3(1, 0, 0));
     TO_mesh->Move(make_float3(0,-3,0), make_float4(0, 0, 0, 1));
 
-    TO_mesh->AddGeometryWildcard("Q", std::vector<float>(num_tri, 0));
-    TO_mesh->AddGeometryWildcard("Temp", std::vector<float>(num_tri, init_temp_cyl));
+    TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
+    TO_mesh->Move(make_float3(2,-3,0), make_float4(0, 0, 0, 1));
 
-    // TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
-    // TO_mesh->Mirror(make_float3(0, 1, 0), make_float3(0, 1, 0));
-    // num_tri = TO_mesh->GetNumTriangles();
-    // TO_mesh->AddGeometryWildcard("Q", std::vector<float>(num_tri, 0));
-    // TO_mesh->AddGeometryWildcard("Temp", std::vector<float>(num_tri, init_temp_cyl));
+    // tile twice to the left
+    TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
+    TO_mesh->Mirror(make_float3(-0.5, 0, 0), make_float3(-1, 0, 0));
+    TO_mesh->Move(make_float3(0,-3,0), make_float4(0, 0, 0, 1));
 
-
-    // TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
-    // TO_mesh->Move(make_float3(0,2,0), make_float4(0, 0, 0, 1));
-    // num_tri = TO_mesh->GetNumTriangles();
-    // TO_mesh->AddGeometryWildcard("Q", std::vector<float>(num_tri, 0));
-    // TO_mesh->AddGeometryWildcard("Temp", std::vector<float>(num_tri, init_temp_cyl));
-
-
-    // TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
-    // TO_mesh->Mirror(make_float3(0, 1, 0), make_float3(0, 1, 0));
-    // TO_mesh->Move(make_float3(0,2,0), make_float4(0, 0, 0, 1));
-    // num_tri = TO_mesh->GetNumTriangles();
-    // TO_mesh->AddGeometryWildcard("Q", std::vector<float>(num_tri, 0));
-    // TO_mesh->AddGeometryWildcard("Temp", std::vector<float>(num_tri, init_temp_cyl));
-
-
-    // TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
-    // TO_mesh->Move(make_float3(0,4,0), make_float4(0, 0, 0, 1));
-    // num_tri = TO_mesh->GetNumTriangles();
-    // TO_mesh->AddGeometryWildcard("Q", std::vector<float>(num_tri, 0));
-    // TO_mesh->AddGeometryWildcard("Temp", std::vector<float>(num_tri, init_temp_cyl));
+    TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
+    TO_mesh->Move(make_float3(-2,-3,0), make_float4(0, 0, 0, 1));
 
 
     std::cout << "added TO unit cell " << std::endl; 

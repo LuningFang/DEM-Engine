@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     // double bzDim = 34;
 
     // double bxDim = 5.0;
-    double bxDim = 1.0;
+    double bxDim = 5.0;
     double byDim = 48.0;
     double bzDim = 0.5;
 
@@ -82,23 +82,24 @@ int main(int argc, char** argv) {
 
     auto TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
     TO_mesh->Move(make_float3(0,-3,0), make_float4(0, 0, 0, 1));
-
+    
     std::cout << TO_mesh->GetNumTriangles() << " faces and " << TO_mesh->GetNumNodes() << " vertices" << std::endl;
 
-    // TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
-    // TO_mesh->Mirror(make_float3(0, 1, 0), make_float3(0, 1, 0));
+    // tile twice to the right
+    TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
+    TO_mesh->Mirror(make_float3(0.5, 0, 0), make_float3(1, 0, 0));
+    TO_mesh->Move(make_float3(0,-3,0), make_float4(0, 0, 0, 1));
 
-    // TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
-    // TO_mesh->Move(make_float3(0,2,0), make_float4(0, 0, 0, 1));
+    TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
+    TO_mesh->Move(make_float3(2,-3,0), make_float4(0, 0, 0, 1));
 
-    // TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
-    // TO_mesh->Mirror(make_float3(0, 1, 0), make_float3(0, 1, 0));
-    // TO_mesh->Move(make_float3(0,2,0), make_float4(0, 0, 0, 1));
+    // tile twice to the left
+    TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
+    TO_mesh->Mirror(make_float3(-0.5, 0, 0), make_float3(-1, 0, 0));
+    TO_mesh->Move(make_float3(0,-3,0), make_float4(0, 0, 0, 1));
 
-    // TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
-    // TO_mesh->Move(make_float3(0,4,0), make_float4(0, 0, 0, 1));
-
-
+    TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
+    TO_mesh->Move(make_float3(-2,-3,0), make_float4(0, 0, 0, 1));
 
     // pin->Move(pin_center, rot);
     // pin->SetFamily(family_ID);
