@@ -101,11 +101,11 @@ int main(int argc, char** argv) {
 
     float fric_coef = 0.6;
     float carbo_density = 3.6;
-    double scaling = 0.2;  // for testing, actual particle scale is 0.1
+    double scaling = 0.1;  // for testing, actual particle scale is 0.1
     std::vector<double> radius_array = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
 
     float step_size = 5e-6;
-    float time_end = 5.0;
+    float time_end = 40.0;
     unsigned int fps = 100;
     double frame_time = 1./double(fps);
 
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
 
     // set up periodic boundary, where particles discharged added to the top
     // Luning: make the coordinates consistent with other test scenarios 
-    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+22", "none");
+    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+16", "none");
     DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
 
     DEMSim.SetInitTimeStep(step_size);
