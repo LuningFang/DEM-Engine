@@ -257,7 +257,7 @@ int main(int argc, char** argv) {
                     counters ++;
                     avg_temp_outlet += T_values[i];
                 }
-                else if (DEMSim.GetOwnerPosition(i).y > -3 ) {
+                else if (DEMSim.GetOwnerPosition(i).y > -8.5 ) {
                     T_values[i] = init_temp_sand;                
                 }
             }
