@@ -30,7 +30,7 @@ double backplate_temp_slope_array[5] = {-2.016422026, -1.171665815, -0.845657055
 double specific_heat_array[5] = {7.7308e6, 7.4125e6, 7.3463e6, 7.2878e6, 7.3028e6};
 
 
-std::string orifice_filename_array[5] = {"15e-1mm", "4mm", "6mm", "8mm", "10mm"};
+std::string orifice_filename_array[5] = {"15e-1mm", "4mm", "6mm", "8mm", "12mm"};
 // Model that describes the temperature of the system
 std::string force_model(double Q_fpf_ratio = 1.0, double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0);
 
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 
     // Append the formatted parameters to out_dir
     std::ostringstream oss;
-    oss << std::scientific << std::setprecision(1) << "Test_" << TestID << "_Q_" << Q_fpf_ratio;
+    oss << std::scientific << std::setprecision(1) << "Nov_Test_" << TestID << "_Q_" << Q_fpf_ratio;
     out_dir += oss.str();
 
     // create directory
