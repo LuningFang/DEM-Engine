@@ -18,6 +18,19 @@
 using namespace deme;
 using namespace std::filesystem;
 
+#define KAPPA_SI_TO_CGS 1e5
+
+enum class BOUNDARY_CONDITION {CONSTANT_FLUX = 0, CONSTANT_TEMP = 1};
+
+// easy conversion of boundary condition to string for writing to file
+std::string to_string(BOUNDARY_CONDITION bc) {
+    switch (bc) {
+        case BOUNDARY_CONDITION::CONSTANT_FLUX: return "CONSTANT_FLUX";
+        case BOUNDARY_CONDITION::CONSTANT_TEMP: return "CONSTANT_TEMP";
+        default: return "UNKNOWN";
+    }
+}
+
 // Read pin positions from a file
 inline std::vector<float3> ReadPinPositions(const std::string& filename) {
     std::vector<float3> pin_positions;
