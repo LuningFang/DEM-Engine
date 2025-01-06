@@ -24,7 +24,6 @@
 using namespace deme;
 using namespace std::filesystem;
 
-#define KAPPA_SI_TO_CGS 1e5
 
 // experimental data from Michael
 double init_temp_array[5] = {18.5, 19, 19.3, 21.3, 21.1};
@@ -34,16 +33,6 @@ double specific_heat_array[5] = {7.917e6, 7.353e6, 7.329e6, 7.329e6, 7.32e6};
 std::string orifice_filename_array[5] = {"15e-1mm", "4mm", "6mm", "8mm", "12mm"};
 // Model that describes the temperature of the system
 std::string temperature_model(double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0, int T_update_frequency = 2000, double k_pw = 4, double k_air = 6e-3);
-
-enum class BOUNDARY_CONDITION {CONSTANT_FLUX = 0, CONSTANT_TEMP = 1};
-
-std::string to_string(BOUNDARY_CONDITION bc) {
-    switch (bc) {
-        case BOUNDARY_CONDITION::CONSTANT_FLUX: return "CONSTANT_FLUX";
-        case BOUNDARY_CONDITION::CONSTANT_TEMP: return "CONSTANT_TEMP";
-        default: return "UNKNOWN";
-    }
-}
 
 int main(int argc, char* argv[]) {
 
@@ -237,6 +226,7 @@ int main(int argc, char* argv[]) {
             // write to info.csv
             info_file << t << "," << recycled_family_mass / (1./fps) << ",";
         }
+        // write output
 	    if (curr_step % (out_steps * 10) == 0) {
             	char filename[200];
             	sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
@@ -295,7 +285,6 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
 
 std::string temperature_model(double backplate_temp_slope, double backplate_temp_intercept, int T_update_frequency, double k_pw, double k_air) {
     std::string model = R"V0G0N(
