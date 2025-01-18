@@ -24,49 +24,59 @@
 using namespace deme;
 using namespace std::filesystem;
 
-double init_temp_array[5] = {20.47, 20.09, 19.96, 19.27, 20.52};
-double backplate_temp_intercept_array[5] = {91.58080936, 79.50573162, 75.22035233, 72.87833029, 72.23564619};
-double backplate_temp_slope_array[5] = {-2.016422026, -1.171665815, -0.845657055, -0.526839739, -0.577035373};
-double specific_heat_array[5] = {7.7308e6, 7.4125e6, 7.3463e6, 7.2878e6, 7.3028e6};
+double init_temp_array[4] = {20.09, 19.96, 19.27, 20.52};
+double backplate_temp_intercept_array[4] = {79.50573162, 75.22035233, 72.87833029, 72.23564619};
+double backplate_temp_slope_array[4] = {-1.171665815, -0.845657055, -0.526839739, -0.577035373};
+double specific_heat_array[4] = {7.4125e6, 7.3463e6, 7.2878e6, 7.3028e6};
 
 
-std::string orifice_filename_array[5] = {"15e-1mm", "4mm", "6mm", "8mm", "12mm"};
-// Model that describes the temperature of the system
-std::string force_model(double Q_fpf_ratio = 1.0, double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0);
+std::string orifice_filename_array[4] = {"4mm", "6mm", "8mm", "12mm"};
+std::string temperature_model(double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0, int T_update_frequency = 2000, double Q_fpt = 3e-3);
 
 int main(int argc, char* argv[]) {
 
     if (argc != 3){
-        std::cout << "Usage: ./phx_temp_validation <TestID 1-5> <Q_fpf_ratio>" << std::endl;
+        std::cout << "Usage: ./phx_temp_validation_full_teardrop <Boundary condition 0 - constant flux, 1 - constant temp> <TestID 1-4>" << std::endl;
         return 1;
     }
 
-    int TestID = std::stoi(argv[1]);
-    double Q_fpf_ratio = std::stod(argv[2]);
+    BOUNDARY_CONDITION boundary_condition = (BOUNDARY_CONDITION)std::stoi(argv[1]);  // boundary condition of the backplate
+    int TestID = std::stoi(argv[2]);     // flow rate tests
 
-    double specific_heat = specific_heat_array[TestID-1];
-    double init_temp_sand = init_temp_array[TestID-1];
-    double backplate_temp_slope = backplate_temp_slope_array[TestID-1];
-    double backplate_temp_intercept = backplate_temp_intercept_array[TestID-1];
+    double specific_heat, init_temp_sand, backplate_temp_slope, backplate_temp_intercept;
+    if (boundary_condition == BOUNDARY_CONDITION::CONSTANT_FLUX){
+        specific_heat = specific_heat_array[TestID-1];
+        init_temp_sand = init_temp_array[TestID-1];
+        backplate_temp_slope = backplate_temp_slope_array[TestID-1];
+        backplate_temp_intercept = backplate_temp_intercept_array[TestID-1];
+    } else {
+        specific_heat = 7.33e6;
+        init_temp_sand = 19;
+        backplate_temp_intercept = 80;
+        backplate_temp_slope = 0;
+    }
     std::string orifice_filename = "clumps/validation_bottom_plate_" + orifice_filename_array[TestID-1] + ".csv";
 
     double init_temp_cyl = 134.7;
-    std::string out_dir = "Oct_2/";
-    std::string input_particle_positions = out_dir + "settling/settled.csv";
+    std::string input_particle_positions = "Oct_2/settling/settled.csv";
 
     // Append the formatted parameters to out_dir
-    std::ostringstream oss;
-    oss << std::scientific << std::setprecision(1) << "Nov_Test_" << TestID << "_Q_" << Q_fpf_ratio;
-    out_dir += oss.str();
-
-    // create directory
+    std::string out_dir = "Dec_validation/full_teardrop/" + to_string(boundary_condition) + "/Test_" + std::to_string(TestID) + "/";
     std::filesystem::create_directories(out_dir);
 
+    float temp_update_dt = 0.01; // temperature update dt
+    float step_size = 5e-6; // DEM dt
+    int T_update_freqency = (int)(temp_update_dt / step_size);  // frequency of updating temperature
+
+
+
     // first and foremost, wrtie the force_model string to a file named temperature_model.txt
-    std::ofstream force_model_file(out_dir + "/temperature_model.txt");
+    std::ofstream temp_model_file(out_dir + "/temperature_model.txt");
+
+    std::string temp_model_string = temperature_model(backplate_temp_slope, backplate_temp_intercept, T_update_freqency, 3e-3);
     // write whatever in force_model() to the file
-    force_model_file << force_model(Q_fpf_ratio, backplate_temp_slope, backplate_temp_intercept);
-    force_model_file.close();
+    temp_model_file << temp_model_string;
+    temp_model_file.close();
 
     // first row is time,mass_flow_rate,avg_outlet_temp
     std::ofstream info_file(out_dir + "/info.csv");
@@ -81,8 +91,6 @@ int main(int argc, char* argv[]) {
     float tube_radius = 0.2;
     double carbo_density = 3.6;  // g/cm^3
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
-    float step_size = 5e-6;  // actual 2e-6
-
 
     int plate_family = 2;
     int sand_family = 0;
@@ -114,7 +122,7 @@ int main(int argc, char* argv[]) {
 
     auto wall_tracker = DEMSim.Track(walls);
 
-    auto my_force_model = DEMSim.DefineContactForceModel(force_model(Q_fpf_ratio, backplate_temp_slope, backplate_temp_intercept));
+    auto my_force_model = DEMSim.DefineContactForceModel(temp_model_string);
 
     // Those following lines are needed. We must let the solver know that those var names are history variable etc.
     my_force_model->SetMustHaveMatProp({"E", "nu", "CoR", "mu", "Crr"});
@@ -231,7 +239,7 @@ int main(int argc, char* argv[]) {
         }
 	    if (curr_step % (out_steps * 10) == 0) {
             	char filename[200];
-            	sprintf(filename, "%s/DEM_frame_%05d.csv", out_dir.c_str(), csv_frame);
+            	sprintf(filename, "%s/DEM_frame_%04d.csv", out_dir.c_str(), csv_frame);
             	DEMSim.WriteSphereFile(std::string(filename));
             	csv_frame++;
 	    }
@@ -251,7 +259,7 @@ int main(int argc, char* argv[]) {
             double avg_temp_outlet = 0;
             // This is where I'm going to update T based on Q values
             for (int i = 0; i < num_particles; i++) {
-                T_values[i] += Q_values[i] * frame_time / (DEMSim.GetOwnerMass(i) * specific_heat);
+                T_values[i] += Q_values[i] * temp_update_dt / (DEMSim.GetOwnerMass(i) * specific_heat);
 
                 if (std::abs (DEMSim.GetOwnerPosition(i).y + 20.5) < 0.1)  {
                     counters ++;
@@ -289,7 +297,10 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-std::string force_model(double Q_fpf_ratio, double backplate_temp_slope, double backplate_temp_intercept) {
+std::string temperature_model(double backplate_temp_slope, 
+                              double backplate_temp_intercept,
+                              int T_update_frequency,
+                              double Q_fpf_ratio) {
     std::string model = R"V0G0N(
  /////////////////////////////////////////////////////////////
 // The first part is just the standard full Hertzian--Mindlin
@@ -306,6 +317,7 @@ double E_real_over_dem = 3.4e3;
 double backplate_temp_slope = )V0G0N" + std::to_string(backplate_temp_slope) + R"V0G0N(;
 double backplate_temp_intercept = )V0G0N" + std::to_string(backplate_temp_intercept) + R"V0G0N(;
 double Q_fpf_ratio = )V0G0N" + std::to_string(Q_fpf_ratio) + R"V0G0N(;
+int T_update_frequency = )V0G0N" + std::to_string(T_update_frequency) + R"V0G0N(;
 
 if (overlapDepth > 0) {
     // Material properties
@@ -405,7 +417,7 @@ if (overlapDepth > 0) {
 
     // bottom plate owner family is 2, Q = 0 
     // Geo of front, and side walls are 0, 1, 2, no Q there
-    if (curr_step % 2000 == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
+    if (curr_step % T_update_frequency == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
 
         // radius contact
         double radius_eff = (ARadius * BRadius) / (ARadius + BRadius);
@@ -475,7 +487,7 @@ if (overlapDepth > 0) {
     // particle fluid particle heat transfer model 
     // Note that this needs to happen all particles within the neighborhood
     int curr_step = (int) (time / ts);
-    if (curr_step % 5000 == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
+    if (curr_step % T_update_frequency == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
 
         double distances[11] = {-0.200, -0.160, -0.120, -0.080, -0.040, 0.000, 0.040, 0.080, 0.120, 0.16, 0.200};
         double volumes[11] = {0.150, 0.167, 0.182, 0.197, 0.217, 0.409, 0.077, 0.046, 0.027, 0.012, 0.000};
