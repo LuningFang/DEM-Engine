@@ -21,25 +21,16 @@
 using namespace deme;
 using namespace std::filesystem;
 
-// Luning: what do i use for backplate temp? 
+// In case of constant flux boundary condition, we need the following parameters
 double init_temp_array[5] = {20.47, 20.09, 19.96, 19.27, 20.52};
 double backplate_temp_intercept_array[5] = {91.58080936, 79.50573162, 75.22035233, 72.87833029, 72.23564619};
 double backplate_temp_slope_array[5] = {-2.016422026, -1.171665815, -0.845657055, -0.526839739, -0.577035373};
 double specific_heat_array[5] = {7.7308e6, 7.4125e6, 7.3463e6, 7.2878e6, 7.3028e6};
 
-std::string orifice_filename_array[5] = {"10_percent", "20_percent", "30_percent", "40_percent", "50_percent"};
+std::string orifice_filename_array[4] = {"4mm", "6mm", "8mm", "12mm"};
 // Model that describes the temperature of the system
 // use default Q_fpf = 3e-3
-std::string force_model(double Q_fpf_ratio = 1.0, double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0);
-
-// given particle radius array, density, material type, bounding box, generate random particle positions, and add particles to the simulation given random radius size 
-int AddParticles(DEMSolver& DEMSim, 
-                  std::vector<double> radius_array, 
-                  float density, 
-                  std::shared_ptr<DEMMaterial> mat_type, 
-                  float3 box_dim,
-                  std::vector<float3> pin_centers,
-                  float pin_hdim);
+std::string temperature_model(double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0, int T_update_frequency = 2000, double Q_fpt = 3e-3);
 
 int main(int argc, char** argv) {
 
@@ -51,42 +42,59 @@ int main(int argc, char** argv) {
     int sand_family = 0;
     int recylcled_family = 1;
 
-    if (argc != 2){
-        std::cout << "Usage: ./TO_design_setup <flow rate num, 0 slow, 1 fast>" << std::endl;
+    if (argc != 3){
+        std::cout << "Usage: ./TO_design_temperature <Boundary condition 0 - constant flux, 1 - constant temp> <TestID 1-4>" << std::endl;
         return 1;
     }
+
+
+    BOUNDARY_CONDITION boundary_condition = (BOUNDARY_CONDITION)std::stoi(argv[1]);  // boundary condition of the backplate
+    int TestID = std::stoi(argv[2]);     // flow rate tests
+
 
     std::string TO_design_mesh = "mesh/TO/uniform.obj";
     std::string TEST_NAME = "TO_uniform";
     std::string out_dir;
-    std::string orifice_filename;
 
+    double specific_heat, init_temp_sand, backplate_temp_slope, backplate_temp_intercept;
+    if (boundary_condition == BOUNDARY_CONDITION::CONSTANT_FLUX){
+        specific_heat = specific_heat_array[TestID-1];
+        init_temp_sand = init_temp_array[TestID-1];
+        backplate_temp_slope = backplate_temp_slope_array[TestID-1];
+        backplate_temp_intercept = backplate_temp_intercept_array[TestID-1];
+    } else {
+        specific_heat = 7.33e6;
+        init_temp_sand = 19;
+        backplate_temp_intercept = 80;
+        backplate_temp_slope = 0;
+    }
+
+    // orifice filename
+    std::string orifice_filename = "clumps/validation_bottom_plate_" + orifice_filename_array[TestID-1] + ".csv";
+    double init_temp_cyl = 134.7;
+
+    // input particle positions
     std::string input_particle_positions = TEST_NAME + "/settling/settled.csv";
 
-    int TestID = std::stoi(argv[1]);  // only 2 and 5 available now
-
-    double specific_heat = specific_heat_array[TestID-1];
-    double init_temp_sand = init_temp_array[TestID-1];
-    double backplate_temp_slope = backplate_temp_slope_array[TestID-1];
-    double backplate_temp_intercept = backplate_temp_intercept_array[TestID-1];
-    // std::string orifice_filename = "clumps/TO_bottom_plate_" + orifice_filename_array[TestID-1] + ".csv";
-
-    orifice_filename = "clumps/validation_bottom_plate_4mm.csv";
-
-    double init_temp_cyl = 134.7;
+    // output 
     std::ostringstream oss;
     oss << "Test_" << TestID;
-    out_dir = TEST_NAME + oss.str();
-
+    out_dir = "Jan_" + TEST_NAME + oss.str();
     create_directories(out_dir);
+
+
+    float step_size = 5e-6;
+    float temp_update_dt = 0.01; // temperature update dt
+    int T_update_frequency = int(temp_update_dt / step_size);
+
 
     double Q_fpf_ratio = 3e-3;  // default value
     // first and foremost, wrtie the force_model string to a file named temperature_model.txt
-    std::ofstream force_model_file(out_dir + "/temperature_model.txt");
+    std::ofstream temperature_model_file(out_dir + "/temperature_model.txt");
     // write whatever in force_model() to the file
-    force_model_file << force_model(Q_fpf_ratio, backplate_temp_slope, backplate_temp_intercept);
-    force_model_file.close();
-
+    std::string temperature_model_string = temperature_model(backplate_temp_slope, backplate_temp_intercept, T_update_frequency, Q_fpf_ratio);
+    temperature_model_file << temperature_model_string;
+    temperature_model_file.close();
 
     // first row is time,mass_flow_rate,avg_outlet_temp
     std::ofstream info_file(out_dir + "/info.csv");
@@ -104,12 +112,12 @@ int main(int argc, char** argv) {
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
     std::vector<double> radius_array = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
 
-    float step_size = 5e-6;
-    float time_end = 40.0;
+    
+    float time_end = 20.0;
     unsigned int fps = 100;
     double frame_time = 1./double(fps);
 
-    auto my_force_model = DEMSim.DefineContactForceModel(force_model(Q_fpf_ratio, backplate_temp_slope, backplate_temp_intercept));
+    auto my_force_model = DEMSim.DefineContactForceModel(temperature_model_string);
 
 
     // Those following lines are needed. We must let the solver know that those var names are history variable etc.
@@ -119,17 +127,14 @@ int main(int argc, char** argv) {
     // wildcard values, temp for temperature, Q for heat flux
     my_force_model->SetPerGeometryWildcards({"Temp", "Q"});
 
-
-    // extract test name from TO_design_mesh
-    // need to put move this somewhere else ... 
+    // material type for carbo and wall
     auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
     auto mat_type_wall = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
 
+    // mesh from TO design
     auto TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
     TO_mesh->Move(make_float3(0,-3,0), make_float4(0, 0, 0, 1));
     
-    std::cout << TO_mesh->GetNumTriangles() << " faces and " << TO_mesh->GetNumNodes() << " vertices" << std::endl;
-
     // tile twice to the right
     TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
     TO_mesh->Mirror(make_float3(0.5, 0, 0), make_float3(1, 0, 0));
@@ -146,7 +151,7 @@ int main(int argc, char** argv) {
     TO_mesh = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(TO_design_mesh), mat_type_wall);
     TO_mesh->Move(make_float3(-2,-3,0), make_float4(0, 0, 0, 1));
 
-
+    std::cout << TO_mesh->GetNumTriangles() << " faces and " << TO_mesh->GetNumNodes() << " vertices" << std::endl;
     std::cout << "added TO unit cell " << std::endl; 
 
     // Add sim domain
@@ -177,9 +182,8 @@ int main(int argc, char** argv) {
     orifice_particles->AddGeometryWildcard("Temp", std::vector<float>(num_orifice_particles, init_temp_sand));
 
 
-    // set up periodic boundary, where particles discharged added to the top
-    // Luning: make the coordinates consistent with other test scenarios 
-    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+16", "none");
+    // periodic boundary condition, need to modify the position based on the set up.
+    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+20", "none");
     DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
 
     DEMSim.SetInitTimeStep(step_size);
@@ -251,13 +255,13 @@ int main(int argc, char** argv) {
             double avg_temp_outlet = 0;
             // This is where I'm going to update T based on Q values
             for (int i = 0; i < num_particles; i++) {
-                T_values[i] += Q_values[i] * frame_time / (DEMSim.GetOwnerMass(i) * specific_heat);
+                T_values[i] += Q_values[i] * temp_update_dt / (DEMSim.GetOwnerMass(i) * specific_heat);
 
-                if (std::abs (DEMSim.GetOwnerPosition(i).y + 20.5) < 0.1)  {
+                if (std::abs (DEMSim.GetOwnerPosition(i).y + 20) < 0.1)  {
                     counters ++;
                     avg_temp_outlet += T_values[i];
                 }
-                else if (DEMSim.GetOwnerPosition(i).y > -8.5 ) {
+                else if (DEMSim.GetOwnerPosition(i).y > -6 ) {
                     T_values[i] = init_temp_sand;                
                 }
             }
@@ -285,7 +289,7 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-std::string force_model(double Q_fpf_ratio, double backplate_temp_slope, double backplate_temp_intercept) {
+std::string temperature_model(double backplate_temp_slope, double backplate_temp_intercept, int T_update_frequency, double Q_fpf_ratio) {
     std::string model = R"V0G0N(
  /////////////////////////////////////////////////////////////
 // The first part is just the standard full Hertzian--Mindlin
@@ -298,9 +302,9 @@ float E_cnt, G_cnt, CoR_cnt, mu_cnt, Crr_cnt;
 const float ks = 2e5; // conductivity of carbo particles
 double E_real_over_dem = 3.4e3;
 
-
 double backplate_temp_slope = )V0G0N" + std::to_string(backplate_temp_slope) + R"V0G0N(;
 double backplate_temp_intercept = )V0G0N" + std::to_string(backplate_temp_intercept) + R"V0G0N(;
+int T_update_frequency = )V0G0N" + std::to_string(T_update_frequency) + R"V0G0N(;
 double Q_fpf_ratio = )V0G0N" + std::to_string(Q_fpf_ratio) + R"V0G0N(;
 
 if (overlapDepth > 0) {
@@ -401,7 +405,7 @@ if (overlapDepth > 0) {
 
     // bottom plate owner family is 2, Q = 0 
     // Geo of front, and side walls are 0, 1, 2, no Q there
-    if (curr_step % 2000 == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
+    if (curr_step % T_update_frequency == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
 
         // radius contact
         double radius_eff = (ARadius * BRadius) / (ARadius + BRadius);
@@ -471,7 +475,7 @@ if (overlapDepth > 0) {
     // particle fluid particle heat transfer model 
     // Note that this needs to happen all particles within the neighborhood
     int curr_step = (int) (time / ts);
-    if (curr_step % 5000 == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
+    if (curr_step % T_update_frequency == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
 
         double distances[11] = {-0.200, -0.160, -0.120, -0.080, -0.040, 0.000, 0.040, 0.080, 0.120, 0.16, 0.200};
         double volumes[11] = {0.150, 0.167, 0.182, 0.197, 0.217, 0.409, 0.077, 0.046, 0.027, 0.012, 0.000};
