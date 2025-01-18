@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
 
     // set up periodic boundary, where particles discharged added to the top
     // Luning: make the coordinates consistent with other test scenarios 
-    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+16", "none");
+    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+19", "none");
     DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
 
     DEMSim.SetInitTimeStep(step_size);
@@ -257,7 +257,7 @@ int main(int argc, char** argv) {
                     counters ++;
                     avg_temp_outlet += T_values[i];
                 }
-                else if (DEMSim.GetOwnerPosition(i).y > -8.5 ) {
+                else if (DEMSim.GetOwnerPosition(i).y > -6 ) {
                     T_values[i] = init_temp_sand;                
                 }
             }
