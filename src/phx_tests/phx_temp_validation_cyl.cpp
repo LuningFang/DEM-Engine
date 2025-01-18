@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     std::filesystem::create_directories(out_dir);
     float temp_update_dt = 0.01; // temperature update dt
     float step_size = 5e-6; // DEM dt
-    float T_update_freqency = (int)(temp_update_dt / step_size);  // frequency of updating temperature
+    int T_update_freqency = (int)(temp_update_dt / step_size);  // frequency of updating temperature
 
     // write the force_model string to a file named temperature_model.txt
     std::ofstream temp_model_file(out_dir + "/temperature_model.txt");
@@ -248,7 +248,7 @@ int main(int argc, char* argv[]) {
             double avg_temp_outlet = 0;
             // Update T based on Q values
             for (int i = 0; i < num_particles; i++) {
-                T_values[i] += Q_values[i] * frame_time / (DEMSim.GetOwnerMass(i) * specific_heat);
+                T_values[i] += Q_values[i] * temp_update_dt / (DEMSim.GetOwnerMass(i) * specific_heat);
 
                 if (std::abs (DEMSim.GetOwnerPosition(i).y + 20.5) < 0.1)  {
                     counters ++;
@@ -285,6 +285,7 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
 
 std::string temperature_model(double backplate_temp_slope, double backplate_temp_intercept, int T_update_frequency, double k_pw, double k_air) {
     std::string model = R"V0G0N(
