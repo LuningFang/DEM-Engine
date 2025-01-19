@@ -41,12 +41,13 @@ int main(int argc, char** argv) {
     double byDim = 48.0;
     double bzDim = 0.5;
 
-    if (argc != 2){
-        std::cout << "Usage: ./phx_setup <Test ID>" << std::endl;
+    if (argc != 3){
+        std::cout << "Usage: ./phx_setup <Test ID> <pin_size_scale, pick, 0.7, 0.9, 1.1, 1.2, 1.3>" << std::endl;
         return 1;
     }
 
     int test_id = std::stoi(argv[1]);
+    double pin_size_scale = std::stof(argv[2]);
 
     DEMSolver DEMSim;
     DEMSim.SetOutputFormat(OUTPUT_FORMAT::CSV);
@@ -56,14 +57,14 @@ int main(int argc, char** argv) {
 
     float fric_coef = 0.6;
     float carbo_density = 3.6;
-    double scaling = 0.1;  // for testing, actual particle scale is 0.1
+    double scaling = 0.2;  // for testing, actual particle scale is 0.1
     std::vector<double> radius_array = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
 
     float step_size = 5e-6;
     float time_end = 2.0;
     unsigned int fps = 10;
 
-    std::string TEST_NAME = "Oct_" + std::to_string(test_id);
+    std::string TEST_NAME = "Oct_Test_" + std::to_string(test_id) + "_pin_scale_" + std::to_string(pin_size_scale);
 
     auto mat_type_carbo = DEMSim.LoadMaterial({{"E", 1e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
     auto mat_type_wall = DEMSim.LoadMaterial({{"E", 2e7}, {"nu", 0.3}, {"CoR", 0.6}, {"mu", fric_coef}, {"Crr", 0.0}});
@@ -74,25 +75,26 @@ int main(int argc, char** argv) {
     // mesh pins
     if (test_id != 0){
         std::string pin_mesh_file_name = "mesh/pins/teardrop_run" + std::to_string(test_id) + ".obj";
-        pin_hdim = 0.45;
+        pin_hdim = 0.45 * pin_size_scale;
         // Add mesh pins
-        pin_centers = AddMeshPins(DEMSim, pin_pos_file, pin_mesh_file_name, mat_type_wall);
+        pin_centers = AddMeshPins(DEMSim, pin_pos_file, pin_mesh_file_name, mat_type_wall, 10, pin_size_scale);
     }
     else {
         // cylindrical pins
-        pin_hdim = 0.2;
+        pin_hdim = 0.2 * pin_size_scale;
         pin_centers = AddCylindricalPins(DEMSim, pin_pos_file, pin_hdim, mat_type_wall);
     }
 
     // Add sim domain
+    double y_bottom = -21.0;
     DEMSim.InstructBoxDomainDimension({-bxDim / 2., bxDim / 2.}, 
-                                      {-byDim / 2., byDim},
+                                      {y_bottom, byDim},
                                       {-bzDim / 2., bzDim/  2.});
     DEMSim.InstructBoxDomainBoundingBC("all", mat_type_wall);
 
 
     // Add particles
-    AddParticles(DEMSim, radius_array, carbo_density, mat_type_carbo, make_float3(bxDim, byDim, bzDim), pin_centers, pin_hdim);
+    AddParticles(DEMSim, radius_array, carbo_density, mat_type_carbo, make_float3(bxDim, std::abs(y_bottom) * 2, bzDim), pin_centers, pin_hdim);
 
 
     DEMSim.SetInitTimeStep(step_size);

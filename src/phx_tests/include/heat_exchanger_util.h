@@ -140,16 +140,17 @@ std::vector<float3> AddCylindricalPins(DEMSolver& DEMSim, std::string pin_pos_fi
 }
 
 // Add pins to the simulation (mesh pins)
-std::vector<float3> AddMeshPins(DEMSolver& DEMSim, std::string pin_pos_filename, std::string pin_obj_name, std::shared_ptr<DEMMaterial> mat_type_wall, int family_ID = 10) {
+std::vector<float3> AddMeshPins(DEMSolver& DEMSim, std::string pin_pos_filename, std::string pin_obj_name, std::shared_ptr<DEMMaterial> mat_type_wall, int family_ID = 10, double pin_size_scale = 1) {
     std::vector<float3> pin_centers = ReadPinPositions(pin_pos_filename);
     std::cout << "number of pins: " << pin_centers.size() << std::endl;
 
     for (auto pin_center : pin_centers) {
         auto pin = DEMSim.AddWavefrontMeshObject(GetDEMEDataFile(pin_obj_name), mat_type_wall);
         float4 rot = make_float4(0, 0, 0, 1);
+        pin->Scale(make_float3(pin_size_scale, pin_size_scale, 1.0));
         pin->Move(pin_center, rot);
         pin->SetFamily(family_ID);
-        std::cout << "added meshed pin at " << pin_center.x << ", " << pin_center.y << ", " << pin_center.z << std::endl;
+        std::cout << "added meshed pin at " << pin_center.x << ", " << pin_center.y << ", " << pin_center.z << ", scale: " << pin_size_scale << std::endl;
     }
     DEMSim.SetFamilyFixed(family_ID);
     return pin_centers;
