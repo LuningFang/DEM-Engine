@@ -35,13 +35,14 @@ std::string temperature_model(double backplate_temp_slope = 0.0, double backplat
 
 int main(int argc, char* argv[]) {
 
-    if (argc != 3){
-        std::cout << "Usage: ./phx_temp_validation_full_teardrop <Boundary condition 0 - constant flux, 1 - constant temp> <TestID 1-4>" << std::endl;
+    if (argc != 4){
+        std::cout << "Usage: ./phx_temp_validation_full_teardrop <Boundary condition 0 - constant flux, 1 - constant temp> <TestID 1-4> <pin scale, 0.5 - 1.8>" << std::endl;
         return 1;
     }
 
     BOUNDARY_CONDITION boundary_condition = (BOUNDARY_CONDITION)std::stoi(argv[1]);  // boundary condition of the backplate
     int TestID = std::stoi(argv[2]);     // flow rate tests
+    float pin_scale = std::stof(argv[3]); // pin scale
 
     double specific_heat, init_temp_sand, backplate_temp_slope, backplate_temp_intercept;
     if (boundary_condition == BOUNDARY_CONDITION::CONSTANT_FLUX){
@@ -58,10 +59,19 @@ int main(int argc, char* argv[]) {
     std::string orifice_filename = "clumps/validation_bottom_plate_" + orifice_filename_array[TestID-1] + ".csv";
 
     double init_temp_cyl = 134.7;
-    std::string input_particle_positions = "Oct_2/settling/settled.csv";
+    std::string input_particle_positions;
+    if (std::abs(pin_scale - 1) < 1e-5) {
+        input_particle_positions = "Oct_2/settling/settled.csv";
+    } // original pin scale, use the same settled file
+    else {
+        // use the pin_scale from command input 
+        input_particle_positions = "Oct_Test_2_pin_scale_" + std::string(argv[3]) + "/settling/settled.csv";
+
+    }
+
 
     // Append the formatted parameters to out_dir
-    std::string out_dir = "Dec_validation/full_teardrop/" + to_string(boundary_condition) + "/Test_" + std::to_string(TestID) + "/";
+    std::string out_dir = "Dec_validation/full_teardrop/pin_scale_" + std::string(argv[3]) + "/Test_" + std::to_string(TestID) + "/";
     std::filesystem::create_directories(out_dir);
 
     float temp_update_dt = 0.01; // temperature update dt
@@ -141,6 +151,7 @@ int main(int argc, char* argv[]) {
     for (auto pin_center : pin_centers) {
         auto pin = DEMSim.AddWavefrontMeshObject("../data/mesh/pins/teardrop_run2.obj", mat_type_wall);
         float4 rot = make_float4(0, 0, 0, 1);
+        pin->Scale(make_float3(pin_scale, pin_scale, 1.0));
         pin->Move(pin_center, rot);
         int num_tri = pin->GetNumTriangles();
         pin->AddGeometryWildcard("Q", std::vector<float>(num_tri, 0));
@@ -198,7 +209,7 @@ int main(int argc, char* argv[]) {
 
 
 
-    float time_end = 20.;
+    float time_end = 10.;
     unsigned int fps = 100;
     double frame_time = 1./double(fps);
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
