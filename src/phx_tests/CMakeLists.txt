@@ -26,6 +26,7 @@ SET(PHX_TESTS
 		phx_temp_validation_cyl
 		phx_temp_validation_no_pins
 		phx_temp_validation_full_teardrop
+		phx_temp_validation_half_teardrop
 		phx_temp_debug
 		TO_design_setup
 		TO_design_discharge
