@@ -103,6 +103,7 @@ int main(int argc, char** argv) {
     path out_dir = current_path();
     out_dir += "/" + TEST_NAME + "/settling/";
     create_directories(out_dir);
+    std::cout << "create directory: " << out_dir << std::endl;
 
     unsigned int out_steps = (unsigned int)(1.0 / (fps * step_size));
 
