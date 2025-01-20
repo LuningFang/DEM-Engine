@@ -26,25 +26,24 @@ using namespace std::filesystem;
 
 
 // experimental data from Michael
-double init_temp_array[5] = {18.5, 19, 19.3, 21.3, 21.1};
-double backplate_temp_intercept_array[5] = {127.18, 80.038, 81.843, 78.379, 78.413};
-double backplate_temp_slope_array[5] = {-3.4086, -1.3823, -1.1256, -0.9396, -0.7764};
-double specific_heat_array[5] = {7.917e6, 7.353e6, 7.329e6, 7.329e6, 7.32e6};
-std::string orifice_filename_array[5] = {"15e-1mm", "4mm", "6mm", "8mm", "12mm"};
+double init_temp_array[4] = {19, 19.3, 21.3, 21.1};
+double backplate_temp_intercept_array[4] = {80.038, 81.843, 78.379, 78.413};
+double backplate_temp_slope_array[4] = {-1.3823, -1.1256, -0.9396, -0.7764};
+double specific_heat_array[4] = {7.353e6, 7.329e6, 7.329e6, 7.32e6};
+std::string orifice_filename_array[4] = {"4mm", "6mm", "8mm", "12mm"};
 // Model that describes the temperature of the system
-std::string temperature_model(double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0, int T_update_frequency = 2000, double k_pw = 4, double k_air = 6e-3);
+std::string temperature_model(double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0, int T_update_frequency = 2000, double Q_fpf = 3e-3);
 
 int main(int argc, char* argv[]) {
 
-    if (argc != 5){
-        std::cout << "Usage: ./phx_temp_validation_cyl <Boundary condition 0 - constant flux, 1 - constant temp> <TestID 1-5> <k_pw SI units> <k_air units>" << std::endl;
+    if (argc != 4){
+        std::cout << "Usage: ./phx_temp_validation_cyl <Boundary condition 0 - constant flux, 1 - constant temp> <TestID 1-5> <pin_size_scale>" << std::endl;
         return 1;
     }
 
     BOUNDARY_CONDITION boundary_condition = (BOUNDARY_CONDITION)std::stoi(argv[1]);  // boundary condition of the backplate
     int TestID = std::stoi(argv[2]);     // flow rate tests
-    double k_pw = std::stod(argv[3]);    // conductivity of backplate and the particles
-    double k_air = std::stod(argv[4]);   // conductivity of air 
+    double pin_scale = std::stod(argv[3]); // scale of the pin size
 
     // depending on different type of boundary condition, compute specific heat, initial temperature, backplate temp slope and intercept
     double specific_heat, init_temp_sand, backplate_temp_slope, backplate_temp_intercept;
@@ -63,20 +62,19 @@ int main(int argc, char* argv[]) {
     std::string orifice_filename = "clumps/validation_bottom_plate_" + orifice_filename_array[TestID-1] + ".csv";
 
     double init_temp_cyl = 134.7; // placeholder value for initialization purpose
-    std::string input_particle_positions = "Aug_validation/settling/settled.csv";  // input particle posistions - cylindrical particles
+    std::string input_particle_positions;
 
-    // create nested folder structure, it will be Dec_validation/cylinder_pins/boundary_condition/TestID/k_pw_$$_k_air_$$  
-    // should first check if the Dec_validation/cylinder_pins/boundary_condition/TestID/ exists, then we start adding folders of various combinations of k_pw and k_air 
-    std::string out_dir = "Dec_validation/cylinder_pins/" + to_string(boundary_condition) + "/Test_" + std::to_string(TestID) + "/";
+    if (std::abs(pin_scale - 1) < 1e-5) {
+        input_particle_positions = "Aug_validation/settling/settled.csv";  
+    } // original pin scale, use the same settled file
+    else {
+        // use the pin_scale from command input 
+        input_particle_positions = "Oct_Test_0_pin_scale_" + std::string(argv[3]) + "/settling/settled.csv";
+    }
+
+    std::string out_dir = "Dec_validation/cylinder_pins/pin_scale_" + std::string(argv[3]) + "/Test_" + std::to_string(TestID) + "/";
     std::filesystem::create_directories(out_dir);
 
-    // Append the formatted parameters to out_dir
-    std::ostringstream oss;
-    oss << std::scientific << "kw_" << std::setprecision(1) << k_pw << "_ka_" << k_air;
-    out_dir += oss.str();
-
-    // create directory
-    std::filesystem::create_directories(out_dir);
     float temp_update_dt = 0.01; // temperature update dt
     float step_size = 5e-6; // DEM dt
     int T_update_freqency = (int)(temp_update_dt / step_size);  // frequency of updating temperature
@@ -86,7 +84,7 @@ int main(int argc, char* argv[]) {
 
     // write temperature_model() to the file
     // pass as cgs units
-    temp_model_file << temperature_model(backplate_temp_slope, backplate_temp_intercept, T_update_freqency, k_pw * KAPPA_SI_TO_CGS, k_air * KAPPA_SI_TO_CGS);
+    temp_model_file << temperature_model(backplate_temp_slope, backplate_temp_intercept, T_update_freqency, 3e-3);
     temp_model_file.close();
 
     // first row is time,mass_flow_rate,avg_outlet_temp
@@ -100,7 +98,7 @@ int main(int argc, char* argv[]) {
     double byDim = 48.0;
     double bzDim = 0.5;
     float3 CylAxis = make_float3(0, 0, 1);
-    float tube_radius = 0.2;
+    float tube_radius = 0.2 * pin_scale;
     double carbo_density = 3.6;  // g/cm^3
     double scaling = 0.1;  // for testing, actual particle scale is 0.1
 
@@ -134,7 +132,7 @@ int main(int argc, char* argv[]) {
 
     auto wall_tracker = DEMSim.Track(walls);
 
-    auto my_temp_model = DEMSim.DefineContactForceModel(temperature_model(backplate_temp_slope, backplate_temp_intercept, T_update_freqency, k_pw * KAPPA_SI_TO_CGS, k_air * KAPPA_SI_TO_CGS));
+    auto my_temp_model = DEMSim.DefineContactForceModel(temperature_model(backplate_temp_slope, backplate_temp_intercept, T_update_freqency, 3e-3));
 
     // Those following lines are needed. We must let the solver know that those var names are history variable etc.
     my_temp_model->SetMustHaveMatProp({"E", "nu", "CoR", "mu", "Crr"});
@@ -177,7 +175,7 @@ int main(int argc, char* argv[]) {
 
 
     // prescribe motion
-    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+22", "none");
+    DEMSim.SetFamilyPrescribedPosition(recylcled_family, "none", "Y+25", "none");
     DEMSim.SetFamilyPrescribedLinVel(recylcled_family, "0", "none", "0");
 
     DEMSim.SetInitTimeStep(step_size);
@@ -287,7 +285,10 @@ int main(int argc, char* argv[]) {
 }
 
 
-std::string temperature_model(double backplate_temp_slope, double backplate_temp_intercept, int T_update_frequency, double k_pw, double k_air) {
+std::string temperature_model(double backplate_temp_slope, 
+                              double backplate_temp_intercept,
+                              int T_update_frequency,
+                              double Q_fpf_ratio) {
     std::string model = R"V0G0N(
  /////////////////////////////////////////////////////////////
 // The first part is just the standard full Hertzian--Mindlin
@@ -304,8 +305,7 @@ double E_real_over_dem = 3.4e3;
 double backplate_temp_slope = )V0G0N" + std::to_string(backplate_temp_slope) + R"V0G0N(;
 double backplate_temp_intercept = )V0G0N" + std::to_string(backplate_temp_intercept) + R"V0G0N(;
 int T_update_frequency = )V0G0N" + std::to_string(T_update_frequency) + R"V0G0N(;
-double k_pw = )V0G0N" + std::to_string(k_pw) + R"V0G0N(;
-double k_air = )V0G0N" + std::to_string(k_air) + R"V0G0N(;
+double Q_fpf_ratio = )V0G0N" + std::to_string(Q_fpf_ratio) + R"V0G0N(;
 
 if (overlapDepth > 0) {
     // Material properties
@@ -405,8 +405,6 @@ if (overlapDepth > 0) {
 
     // bottom plate owner family is 2, Q = 0 
     // Geo of front, and side walls are 0, 1, 2, no Q there
-    // This is particle-particle heat transfer 
-
     if (curr_step % T_update_frequency == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
 
         // radius contact
@@ -424,23 +422,23 @@ if (overlapDepth > 0) {
             // wall is bodyA, look up temperature of the wall based on particle B position
             T_i = backplate_temp_slope * BOwnerPos.y + backplate_temp_intercept;
             T_j = Temp_B[BGeo];
-            Q_ij = 4. * k_pw * radius_contact * (T_j - T_i);
+            Q_ij = 4. * ks * radius_contact * (T_j - T_i);
         } else if (BGeo == 3 && (int)myContactType == 11) {
             // wall is bodyB, look up temperature of the wall based on particle A position
             T_j = backplate_temp_slope * AOwnerPos.y + backplate_temp_intercept;
             T_i = Temp_A[AGeo];
-            Q_ij = 4. * k_pw * radius_contact * (T_j - T_i);
+            Q_ij = 4. * ks * radius_contact * (T_j - T_i);
         } else if ((int)myContactType == 13 && AOwnerFamily == 0){
             // sand is bodyA, pin is body B, look up temp of B based on position of A
             T_j = backplate_temp_slope * AOwnerPos.y + backplate_temp_intercept;
             T_i = Temp_A[AGeo];
-            Q_ij = 4. * k_pw * radius_contact * (T_j - T_i);
+            Q_ij = 4. * ks * radius_contact * (T_j - T_i);
 
         } else if ((int)myContactType == 13 && BOwnerFamily == 0) {
             // sand is bodyB, pin is body A, look up temp based on position of B
             T_i = backplate_temp_slope * BOwnerPos.y + backplate_temp_intercept;
             T_j = Temp_B[BGeo];
-            Q_ij = 4. * k_pw * radius_contact * (T_j - T_i);
+            Q_ij = 4. * ks * radius_contact * (T_j - T_i);
         }
 
         else {
@@ -476,7 +474,7 @@ if (overlapDepth > 0) {
     // particle fluid particle heat transfer model 
     // Note that this needs to happen all particles within the neighborhood
     int curr_step = (int) (time / ts);
-    if (curr_step % T_update_frequency == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
+    if (curr_step % T_update_frequency  == 0 && AOwnerFamily != 2 && BOwnerFamily != 2 && AGeo != 0 && BGeo != 0 && AGeo != 1 && BGeo != 1 && AGeo != 2 && BGeo != 2) {
 
         double distances[11] = {-0.200, -0.160, -0.120, -0.080, -0.040, 0.000, 0.040, 0.080, 0.120, 0.16, 0.200};
         double volumes[11] = {0.150, 0.167, 0.182, 0.197, 0.217, 0.409, 0.077, 0.046, 0.027, 0.012, 0.000};
@@ -503,35 +501,43 @@ if (overlapDepth > 0) {
             // wall is bodyA, look up temperature of the wall based on particle B position
             T_i = backplate_temp_slope * BOwnerPos.y + backplate_temp_intercept;
             T_j = Temp_B[BGeo];
-            Q_ij = 2. * volume *  (T_j - T_i) * k_air;
+            Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
 
         } else if (BGeo == 3 && (int)myContactType == 11) {
             // wall is bodyB, look up temperature of the wall based on particle A position
             T_j = backplate_temp_slope * AOwnerPos.y + backplate_temp_intercept;
             T_i = Temp_A[AGeo];
-            Q_ij = 2. * volume *  (T_j - T_i) * k_air;
+            Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
         } else if ((int)myContactType == 13 && AOwnerFamily == 0){
             // sand is bodyA, pin is body B, look up temp of B based on position of A
             T_j = backplate_temp_slope * AOwnerPos.y + backplate_temp_intercept;
             T_i = Temp_A[AGeo];
-            Q_ij = 2. * volume *  (T_j - T_i) * k_air;
+            Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
 
         } else if ((int)myContactType == 13 && BOwnerFamily == 0) {
             // sand is bodyB, pin is body A, look up temp based on position of B
             T_i = backplate_temp_slope * BOwnerPos.y + backplate_temp_intercept;
             T_j = Temp_B[BGeo];
-            Q_ij = 2. * volume *  (T_j - T_i) * k_air;
+            Q_ij = 2. * ks * volume *  (T_j - T_i) * Q_fpf_ratio;
         }
 
         else {
             // Both AGeo and BGeo are particles
             T_i = Temp_A[AGeo];
             T_j = Temp_B[BGeo];
-            Q_ij = volume *  (T_j - T_i) * k_air;
+            Q_ij = ks * volume *  (T_j - T_i) * Q_fpf_ratio;
+
         }
+
 
             atomicAdd(Q_A + AGeo,  Q_ij);
             atomicAdd(Q_B + BGeo, -Q_ij);
+
+            // note, I can't have negative temp, print all info when T is negative
+            // if (T_i < 0 || T_j < 0) {
+            //     printf("T_j: %f, T_i: %f, Q_ij: %f, volume: %f, AGeo: %d, BGeo: %d, ratio = %f, i = %d\n", T_j, T_i, Q_ij, volume, AGeo, BGeo, Q_fpf_ratio, i);
+            // }
+
         }
 
     }
