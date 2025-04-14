@@ -56,7 +56,15 @@ int main(int argc, char** argv) {
     } else if (std::string(argv[1]) == "1") {
         TO_design_mesh = "mesh/TO/allConstr.obj";   
         TEST_NAME = "TO_allConstr";
-    } else {
+    } else if (std::string(argv[1]) == "2") {
+        TO_design_mesh = "mesh/TO/pConstr.obj";
+        TEST_NAME = "TO_pConstr";
+        bzDim = 1.0;
+    } else if (std::string(argv[1]) == "3") {
+        TO_design_mesh = "mesh/TO/oacConstr.obj";
+        TEST_NAME = "TO_oacConstr";
+    }
+    else {
         std::cout << "Usage: ./TO_design_setup <Test ID, 0 for uniform and 1 for allConstr>" << std::endl;
         return 1;
     }
@@ -69,7 +77,7 @@ int main(int argc, char** argv) {
 
     float fric_coef = 0.6;
     float carbo_density = 3.6;
-    double scaling = 0.2;  // for testing, actual particle scale is 0.1
+    double scaling = 0.25;  // for testing, actual particle scale is 0.1
     std::vector<double> radius_array = {0.212 * scaling, 0.2 * scaling, 0.178 * scaling};
 
     float step_size = 5e-6;
