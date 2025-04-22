@@ -35,18 +35,21 @@ int main() {
     DEMSim.SetOutputContent(OUTPUT_CONTENT::XYZ);
 
     srand(759);
+    double gravity = -1.62;
 
     // Define materials
     auto mat_type_terrain = DEMSim.LoadMaterial({{"E", 1e9}, {"nu", 0.3}, {"CoR", 0.3}, {"mu", 0.5}});
     auto mat_type_wheel = DEMSim.LoadMaterial({{"E", 1e9}, {"nu", 0.3}, {"CoR", 0.3}, {"mu", 0.5}});
 
     // Define the simulation world
-    double world_y_size = 0.99;
-    DEMSim.InstructBoxDomainDimension(world_y_size, world_y_size, world_y_size);
+    double world_y_size = 0.6;
+    DEMSim.InstructBoxDomainDimension(world_y_size * 1.2, world_y_size * 1.2, 2.0);
     // Add 5 bounding planes around the simulation world, and leave the top open
     DEMSim.InstructBoxDomainBoundingBC("top_open", mat_type_terrain);
-    float bottom = -0.5;
+    float bottom = 0.0;
     DEMSim.AddBCPlane(make_float3(0, 0, bottom), make_float3(0, 0, 1), mat_type_terrain);
+    auto container = DEMSim.AddExternalObject();
+    container->AddCylinder(make_float3(0), make_float3(0, 0, 1), world_y_size / 2., mat_type_terrain, 0);
 
     // Define the terrain particle templates
     // Calculate its mass and MOI
@@ -103,15 +106,15 @@ int main() {
     HCPSampler sampler(scales.at(0) * 2.2);
 
     // Make ready for simulation
-    float step_size = 1e-6;
+    float step_size = 4e-6;
     DEMSim.SetInitTimeStep(step_size);
-    DEMSim.SetGravitationalAcceleration(make_float3(0, 0, -9.81));
+    DEMSim.SetGravitationalAcceleration(make_float3(0, 0, gravity));
     // Max velocity info is generally just for the solver's reference and the user do not have to set it. The solver
     // wouldn't take into account a vel larger than this when doing async-ed contact detection: but this vel won't
     // happen anyway and if it does, something already went wrong.
     DEMSim.SetMaxVelocity(15.);
     // Error out vel is used to force the simulation to abort when something goes wrong.
-    DEMSim.SetErrorOutVelocity(15.);
+    DEMSim.SetErrorOutVelocity(150.);
     DEMSim.SetExpandSafetyMultiplier(1.2);
     DEMSim.SetInitBinNumTarget(1e7);
     DEMSim.Initialize();
@@ -119,7 +122,7 @@ int main() {
     float time_end = 10.0;
 
     path out_dir = current_path();
-    out_dir += "/DemoOutput_GRCPrep_Part1";
+    out_dir += "/DemoOutput_GRCPrep_Part1_small";
     create_directory(out_dir);
     unsigned int currframe = 0;
     unsigned int curr_step = 0;
@@ -127,9 +130,10 @@ int main() {
     float sample_halfheight = 0.4;
     float sample_halfwidth_x = (world_y_size * 0.96) / 2;
     float sample_halfwidth_y = (world_y_size * 0.96) / 2;
+    float sample_radius = world_y_size * 0.96 / 2 * std::sqrt(2.0);
     float offset_z = bottom + sample_halfheight + 0.15;
     float settle_frame_time = 0.2;
-    float settle_batch_time = 2.0;
+    float settle_batch_time = 3.0;
 
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     while (DEMSim.GetNumClumps() < 0.25e6) {
@@ -138,8 +142,11 @@ int main() {
         std::vector<std::shared_ptr<DEMClumpTemplate>> heap_template_in_use;
         std::vector<unsigned int> heap_family;
         // Sample and add heap particles
-        auto heap_particles_xyz =
-            sampler.SampleBox(sample_center, make_float3(sample_halfwidth_x, sample_halfwidth_y, sample_halfheight));
+        // auto heap_particles_xyz =
+        //     sampler.SampleBox(sample_center, make_float3(sample_halfwidth_x, sample_halfwidth_y, sample_halfheight));
+        auto heap_particles_xyz = 
+            sampler.SampleCylinderZ(sample_center, sample_halfwidth_x, sample_halfheight);
+
         for (unsigned int i = 0; i < heap_particles_xyz.size(); i++) {
             int ind = std::round(discrete_dist(e1));
             heap_template_in_use.push_back(ground_particle_templates.at(ind));
@@ -147,7 +154,7 @@ int main() {
         }
         auto heap_particles = DEMSim.AddClumps(heap_template_in_use, heap_particles_xyz);
         // Give ground particles a small initial velocity so they `collapse' at the start of the simulation
-        heap_particles->SetVel(make_float3(0.00, 0, -0.05));
+        heap_particles->SetVel(make_float3(0.00, 0, -0.03));
         heap_particles->SetFamilies(heap_family);
         DEMSim.UpdateClumps();
         std::cout << "Current number of clumps: " << DEMSim.GetNumClumps() << std::endl;
