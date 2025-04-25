@@ -41,12 +41,14 @@ int main() {
     auto mat_type_wheel = DEMSim.LoadMaterial({{"E", 1e9}, {"nu", 0.3}, {"CoR", 0.3}, {"mu", 0.5}});
 
     // Define the simulation world
-    double world_y_size = 0.7;
-    DEMSim.InstructBoxDomainDimension(world_y_size, world_y_size, world_y_size * 2);
+    double world_y_size = 0.6;
+    DEMSim.InstructBoxDomainDimension(world_y_size * 1.2, world_y_size * 1.2, 2.0);
     // Add 5 bounding planes around the simulation world, and leave the top open
     DEMSim.InstructBoxDomainBoundingBC("top_open", mat_type_terrain);
     float bottom = 0.0;
     DEMSim.AddBCPlane(make_float3(0, 0, bottom), make_float3(0, 0, 1), mat_type_terrain);
+    auto container = DEMSim.AddExternalObject();
+    container->AddCylinder(make_float3(0), make_float3(0, 0, 1), world_y_size / 2., mat_type_terrain, 0);
 
     // Define the terrain particle templates
     // Calculate its mass and MOI
@@ -84,10 +86,10 @@ int main() {
     }
 
     // Now we load part1 clump locations from a part1 output file
-    auto part1_clump_xyz = DEMSim.ReadClumpXyzFromCsv("./DemoOutput_GRCPrep_Part1/GRC_3e5.csv");
-    auto part1_clump_quaternion = DEMSim.ReadClumpQuatFromCsv("./DemoOutput_GRCPrep_Part1/GRC_3e5.csv");
-    auto part1_pairs = DEMSim.ReadContactPairsFromCsv("./DemoOutput_GRCPrep_Part1/Contact_pairs_3e5.csv");
-    auto part1_wcs = DEMSim.ReadContactWildcardsFromCsv("./DemoOutput_GRCPrep_Part1/Contact_pairs_3e5.csv");
+    auto part1_clump_xyz = DEMSim.ReadClumpXyzFromCsv("./DemoOutput_GRCPrep_Part1_small/GRC_3e5.csv");
+    auto part1_clump_quaternion = DEMSim.ReadClumpQuatFromCsv("./DemoOutput_GRCPrep_Part1_small/GRC_3e5.csv");
+    auto part1_pairs = DEMSim.ReadContactPairsFromCsv("./DemoOutput_GRCPrep_Part1_small/Contact_pairs_3e5.csv");
+    auto part1_wcs = DEMSim.ReadContactWildcardsFromCsv("./DemoOutput_GRCPrep_Part1_small/Contact_pairs_3e5.csv");
 
     std::vector<float3> in_xyz;
     std::vector<float4> in_quat;
@@ -141,7 +143,8 @@ int main() {
     std::for_each(inv_xyz.begin(), inv_xyz.end(), [](float3& xyz) { xyz.z += 0.13; });
     inv_batch.SetPos(inv_xyz);
     DEMSim.AddClumps(inv_batch);
-    // Add more layers of such graular bed
+    // double shift_dist = 0.13;
+    // // Add more layers of such graular bed
     // for (int i = 0; i < 1; i++) {
     //     DEMClumpBatch another_batch = base_batch;
     //     std::for_each(in_xyz.begin(), in_xyz.end(), [shift_dist](float3& xyz) { xyz.z += shift_dist; });
@@ -158,7 +161,7 @@ int main() {
     // (Z <= -0.44);");
     auto total_mass_finder =
         DEMSim.CreateInspector("clump_mass", "return (abs(X) <= 0.48) && (abs(Y) <= 0.48) && (Z <= 0.1);");
-    float total_volume = 0.7 * 0.7 * 0.1;
+    float total_volume = world_y_size * world_y_size * 3.14 * 0.1;
     auto max_z_finder = DEMSim.CreateInspector("clump_max_z");
     auto max_v_finder = DEMSim.CreateInspector("clump_max_absv");
 
