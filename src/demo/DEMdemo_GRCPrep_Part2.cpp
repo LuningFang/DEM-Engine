@@ -140,10 +140,10 @@ int main() {
     inv_batch.SetOriQ(inv_quat);
 
     // First put the inv batch above the base batch
-    std::for_each(inv_xyz.begin(), inv_xyz.end(), [](float3& xyz) { xyz.z += 0.13; });
+    std::for_each(inv_xyz.begin(), inv_xyz.end(), [](float3& xyz) { xyz.z += 0.11; });
     inv_batch.SetPos(inv_xyz);
     DEMSim.AddClumps(inv_batch);
-    double shift_dist = 0.08;
+    double shift_dist = 0.12;
     // Add more layers of such graular bed
     for (int i = 0; i < 1; i++) {
         DEMClumpBatch another_batch = base_batch;
