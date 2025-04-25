@@ -41,11 +41,11 @@ int main() {
     auto mat_type_wheel = DEMSim.LoadMaterial({{"E", 1e9}, {"nu", 0.3}, {"CoR", 0.3}, {"mu", 0.5}});
 
     // Define the simulation world
-    double world_y_size = 0.99;
+    double world_y_size = 0.7;
     DEMSim.InstructBoxDomainDimension(world_y_size, world_y_size, world_y_size * 2);
     // Add 5 bounding planes around the simulation world, and leave the top open
     DEMSim.InstructBoxDomainBoundingBC("top_open", mat_type_terrain);
-    float bottom = -0.5;
+    float bottom = 0.0;
     DEMSim.AddBCPlane(make_float3(0, 0, bottom), make_float3(0, 0, 1), mat_type_terrain);
 
     // Define the terrain particle templates
@@ -137,48 +137,45 @@ int main() {
     // inv_batch.SetPos(inv_xyz);
     inv_batch.SetOriQ(inv_quat);
 
-    // Based on the `base_batch', we can create more batches. For example, another batch that is like copy-paste the
-    // existing batch, then shift up for a small distance.
-    float shift_dist = 0.2;
     // First put the inv batch above the base batch
-    std::for_each(inv_xyz.begin(), inv_xyz.end(), [](float3& xyz) { xyz.z += 0.2; });
+    std::for_each(inv_xyz.begin(), inv_xyz.end(), [](float3& xyz) { xyz.z += 0.13; });
     inv_batch.SetPos(inv_xyz);
     DEMSim.AddClumps(inv_batch);
     // Add more layers of such graular bed
-    for (int i = 0; i < 1; i++) {
-        DEMClumpBatch another_batch = base_batch;
-        std::for_each(in_xyz.begin(), in_xyz.end(), [shift_dist](float3& xyz) { xyz.z += shift_dist; });
-        another_batch.SetPos(in_xyz);
-        DEMSim.AddClumps(another_batch);
-        DEMClumpBatch another_inv_batch = inv_batch;
-        std::for_each(inv_xyz.begin(), inv_xyz.end(), [shift_dist](float3& xyz) { xyz.z += shift_dist; });
-        another_inv_batch.SetPos(inv_xyz);
-        DEMSim.AddClumps(another_inv_batch);
-    }
+    // for (int i = 0; i < 1; i++) {
+    //     DEMClumpBatch another_batch = base_batch;
+    //     std::for_each(in_xyz.begin(), in_xyz.end(), [shift_dist](float3& xyz) { xyz.z += shift_dist; });
+    //     another_batch.SetPos(in_xyz);
+    //     DEMSim.AddClumps(another_batch);
+    //     DEMClumpBatch another_inv_batch = inv_batch;
+    //     std::for_each(inv_xyz.begin(), inv_xyz.end(), [shift_dist](float3& xyz) { xyz.z += shift_dist; });
+    //     another_inv_batch.SetPos(inv_xyz);
+    //     DEMSim.AddClumps(another_inv_batch);
+    // }
 
     // Some inspectors and compressors
     // auto total_volume_finder = DEMSim.CreateInspector("clump_volume", "return (abs(X) <= 0.48) && (abs(Y) <= 0.48) &&
     // (Z <= -0.44);");
     auto total_mass_finder =
-        DEMSim.CreateInspector("clump_mass", "return (abs(X) <= 0.48) && (abs(Y) <= 0.48) && (Z <= -0.44);");
-    float total_volume = 0.96 * 0.96 * 0.06;
+        DEMSim.CreateInspector("clump_mass", "return (abs(X) <= 0.48) && (abs(Y) <= 0.48) && (Z <= 0.1);");
+    float total_volume = 0.7 * 0.7 * 0.1;
     auto max_z_finder = DEMSim.CreateInspector("clump_max_z");
     auto max_v_finder = DEMSim.CreateInspector("clump_max_absv");
 
     // Now add a plane to compress the `road'
     auto compressor = DEMSim.AddExternalObject();
-    compressor->AddPlane(make_float3(0, 0, 0), make_float3(0, 0, -1), mat_type_terrain);
+    compressor->AddPlane(make_float3(0, 0, 0.5), make_float3(0, 0, -1), mat_type_terrain);
     compressor->SetFamily(1);
     DEMSim.DisableContactBetweenFamilies(0, 1);
     DEMSim.SetFamilyFixed(1);
     auto compressor_tracker = DEMSim.Track(compressor);
 
     // Make ready for simulation
-    float step_size = 1e-6;
+    float step_size = 4e-6;
     DEMSim.SetInitTimeStep(step_size);
     DEMSim.SetGravitationalAcceleration(make_float3(0, 0, -9.81));
     // Error out vel is used to force the simulation to abort when something goes wrong.
-    DEMSim.SetErrorOutVelocity(15.);
+    DEMSim.SetErrorOutVelocity(40.);
     DEMSim.SetExpandSafetyMultiplier(1.2);
     DEMSim.SetInitBinNumTarget(1e7);
     DEMSim.Initialize();
@@ -192,8 +189,8 @@ int main() {
     unsigned int currframe = 0;
     unsigned int curr_step = 0;
 
-    float settle_frame_time = 0.05;
-    float settle_batch_time = 1.0;
+    float settle_frame_time = 0.1;
+    float settle_batch_time = 1.5;
 
     float matter_mass = total_mass_finder->GetValue();
     std::cout << "Initial bulk density " << matter_mass / total_volume << std::endl;
