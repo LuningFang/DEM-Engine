@@ -51,9 +51,9 @@ int main(int argc, char** argv) {
     BOUNDARY_CONDITION boundary_condition = (BOUNDARY_CONDITION)std::stoi(argv[1]);  // boundary condition of the backplate
     int TestID = std::stoi(argv[2]);     // flow rate tests
 
-
-    std::string TO_design_mesh = "mesh/TO/uniform.obj";
-    std::string TEST_NAME = "TO_uniform";
+    // std::string TO_design_mesh = "mesh/TO/uniform.obj";
+    std::string TO_design_mesh = "mesh/TO/oacConstr.obj";
+    std::string TEST_NAME = "TO_oacConstr";
     std::string out_dir;
 
     double specific_heat, init_temp_sand, backplate_temp_slope, backplate_temp_intercept;
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
     // output 
     std::ostringstream oss;
     oss << "Test_" << TestID;
-    out_dir = "Jan_" + TEST_NAME + oss.str();
+    out_dir = "May2025_" + TEST_NAME + oss.str();
     create_directories(out_dir);
 
 
@@ -455,6 +455,10 @@ if (overlapDepth > 0) {
 
         if (T_i < 0 || T_j < 0) {
             printf("NEGATIVE TEMP! T_j: %f, T_i: %f, Q_ij: %f, radius_contact: %f, force_mag: %f, AGeo: %d, BGeo: %d\n", T_j, T_i, Q_ij, radius_contact, force_mag, AGeo, BGeo);
+        }
+
+        if (T_i > 80 || T_j > 80) {
+            printf("Temp larger than back wall! T_j: %f, T_i: %f, Q_ij: %f, radius_contact: %f, force_mag: %f, AGeo: %d, BGeo: %d\n", T_j, T_i, Q_ij, radius_contact, force_mag, AGeo, BGeo);
         }
 
     }
