@@ -51,7 +51,15 @@ int main(int argc, char** argv) {
     } else if (std::string(argv[1]) == "1") {
         TO_design_mesh = "mesh/TO/allConstr.obj";   
         TEST_NAME = "TO_allConstr";
-    } else {
+    } else if (std::string(argv[1]) == "2") {
+        TO_design_mesh = "mesh/TO/pConstr.obj";
+        TEST_NAME = "TO_pConstr";
+        bzDim = 1.0;
+    } else if (std::string(argv[1]) == "3") {
+        TO_design_mesh = "mesh/TO/oacConstr.obj";
+        TEST_NAME = "TO_oacConstr";
+    }
+    else {
         std::cout << "Usage: ./TO_design_setup <Test ID, 0 for uniform and 1 for allConstr>" << std::endl;
         return 1;
     }
@@ -125,7 +133,7 @@ int main(int argc, char** argv) {
 
     // sampler spacing
     PDSampler smapler(2.02 * radius_array[0]);
-    float3 sampler_center = make_float3(0, byDim/2. - 6, 0);
+    float3 sampler_center = make_float3(0, byDim/2. - 16, 0);
     float3 sampler_hdim = make_float3(bxDim/2., byDim/4. + 3, bzDim/2.);
     particle_xyz = smapler.SampleBox(sampler_center, sampler_hdim);
 
