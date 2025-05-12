@@ -27,7 +27,7 @@ double backplate_temp_intercept_array[5] = {91.58080936, 79.50573162, 75.2203523
 double backplate_temp_slope_array[5] = {-2.016422026, -1.171665815, -0.845657055, -0.526839739, -0.577035373};
 double specific_heat_array[5] = {7.7308e6, 7.4125e6, 7.3463e6, 7.2878e6, 7.3028e6};
 
-std::string orifice_filename_array[4] = {"4mm", "6mm", "8mm", "12mm"};
+std::string orifice_filename_array[5] = {"2mm", "4mm", "6mm", "8mm", "12mm"};
 // Model that describes the temperature of the system
 // use default Q_fpf = 3e-3
 std::string temperature_model(double backplate_temp_slope = 0.0, double backplate_temp_intercept = 80.0, int T_update_frequency = 2000, double Q_fpt = 3e-3);
@@ -52,8 +52,8 @@ int main(int argc, char** argv) {
     int TestID = std::stoi(argv[2]);     // flow rate tests
 
 
-    std::string TO_design_mesh = "mesh/TO/uniform.obj";
-    std::string TEST_NAME = "TO_uniform";
+    std::string TO_design_mesh = "mesh/TO/allConstr.obj";
+    std::string TEST_NAME = "TO_allConstr";
     std::string out_dir;
 
     double specific_heat, init_temp_sand, backplate_temp_slope, backplate_temp_intercept;
