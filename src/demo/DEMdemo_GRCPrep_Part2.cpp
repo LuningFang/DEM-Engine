@@ -215,7 +215,7 @@ int main() {
     double compress_time = 0.3;
     double now_z = max_z_finder->GetValue();
     compressor_tracker->SetPos(make_float3(0, 0, now_z));
-    double compressor_final_dist = 0.1;
+    double compressor_final_dist = 0.01;
     double compressor_v = compressor_final_dist / compress_time;
 
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
